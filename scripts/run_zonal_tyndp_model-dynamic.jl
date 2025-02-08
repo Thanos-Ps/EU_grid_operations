@@ -72,7 +72,6 @@ prediction_horizon = 6                                           # Prediction ho
 tolerance = 10^-1                                                # Acceptable tolerance of error for convergence
 repetitions = collect(1:prediction_horizon:number_of_hours)      # find the "connecting points" of horizon loops (first hour of new loop)  
 number_of_iterations = zeros(Int64, size(repetitions))           # Initialization of vector that stores the final number of iterations of each prediction horizon loop
-j = 0                                                            # variable necessary for prepare_hourly_data! to run in other versions (2.5)
 starting_temperature = 75                                        # Cable temperature at the start of the simulation
 
 # Insert id of cables with dynamic rating
@@ -125,10 +124,10 @@ for i in repetitions            # repeat the horizon loops as many times needed 
 
       print("Hour ", hour, " of ", number_of_hours, "\n")
       # Write time series data into input data dictionary
-      _EUGO.prepare_hourly_data!(input_data, nodal_data, hour, iteration[1], cable_data, cable_id, input_data_raw, i, number_of_iterations, reps[1], repetitions,j,starting_temperature)
+      _EUGO.prepare_hourly_data!(input_data, nodal_data, hour, iteration[1], cable_data, cable_id, input_data_raw, i, number_of_iterations, reps[1], repetitions, starting_temperature)
 
       # Solve Network Flow OPF using PowerModels
-      result["$hour"] = _PM.solve_opf(input_data, PowerModels.NFAPowerModel, gurobi) 
+      result["$hour"] = _PM.solve_opf(input_data, PowerModels.NFAPowerModel, solver) 
 
       store_adm_power_and_temperature!(cable_data, result, input_data_raw, iteration[1], hour, cable_id)
 
