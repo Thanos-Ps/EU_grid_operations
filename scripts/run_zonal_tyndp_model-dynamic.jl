@@ -125,7 +125,7 @@ for i in repetitions            # repeat the horizon loops as many times needed 
 
       print("Hour ", hour, " of ", number_of_hours, "\n")
       # Write time series data into input data dictionary
-      _EUGO.prepare_hourly_data!(input_data, nodal_data, hour, iteration[1], cable_data, cable_id, input_data_raw, i, number_of_iterations, reps[1], version_flag, repetitions,j,starting_temperature)
+      _EUGO.prepare_hourly_data!(input_data, nodal_data, hour, iteration[1], cable_data, cable_id, input_data_raw, i, number_of_iterations, reps[1], repetitions,j,starting_temperature)
 
       # Solve Network Flow OPF using PowerModels
       result["$hour"] = _PM.solve_opf(input_data, PowerModels.NFAPowerModel, gurobi) 

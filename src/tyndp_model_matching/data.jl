@@ -193,7 +193,7 @@ function construct_data_dictionary_2024(ntcs, arcs, capacity, nodes, demand, sce
     return data, nodal_data
 end
     
-function prepare_hourly_data!(data, nodal_data, hour)    
+function prepare_hourly_data!(data, nodal_data, hour, cable_data, cable_id, input_data_raw, starting_temperature, repetitions, number_of_iterations, reps, iteration, i)    
     for (l, load) in data["load"]
         node = load["node"]
         load["pd"] = nodal_data[node]["demand"][hour] / data["baseMVA"]
