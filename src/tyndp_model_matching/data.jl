@@ -213,6 +213,67 @@ function prepare_hourly_data!(data, nodal_data, hour)
         end
     end
 
+    #########################MODIFICATIONS##########################
+
+    if iteration > 1  # updating capacities starts after second iteration (based on the previous one)
+
+        for cable in cable_id
+
+            data["branch"]["$cable"]["rate_a"] = (1/100) * cable_data["$cable"]["$hour"]["P_adm"]["$(iteration-1)"] * input_data_raw["branch"]["$cable"]["rate_a"]
+            data["branch"]["$cable"]["rate_p"] = (1/100) * cable_data["$cable"]["$hour"]["P_adm"]["$(iteration-1)"] * input_data_raw["branch"]["$cable"]["rate_p"]
+            data["branch"]["$cable"]["rate_i"] = (1/100) * cable_data["$cable"]["$hour"]["P_adm"]["$(iteration-1)"] * input_data_raw["branch"]["$cable"]["rate_i"]
+            
+        end
+
+    
+    elseif iteration == 1 && reps != 1   #Alternative:  iteration == 1 && (hour == i && hour != 1) -> to perform the update only in the first hour and then do not update again. (to be verified)
+        # Case: Transition to a new prediction horizon loop -> During the first iteration we set the cable capacity equal to the converged results  of 
+        # the previous prediction horizon loop (number_of_iterations[reps-1]) related to the 1st hour of the new prediction horizon (that's why we use 
+        # repetitions[reps]). BUT this value is kept for the whole new prediction horizon (it keeps entering the conditional during 
+        # all hours of prediction horizon and re-updates the capacity. It would be unnecessary but it's not wrong.)
+
+        for cable in cable_id
+            data["branch"]["$cable"]["rate_a"] = (1/100) * cable_data["$cable"]["$(repetitions[reps])"]["P_adm"]["$(number_of_iterations[reps-1])"] * input_data_raw["branch"]["$cable"]["rate_a"]
+            data["branch"]["$cable"]["rate_p"] = (1/100) * cable_data["$cable"]["$(repetitions[reps])"]["P_adm"]["$(number_of_iterations[reps-1])"] * input_data_raw["branch"]["$cable"]["rate_p"]
+            data["branch"]["$cable"]["rate_i"] = (1/100) * cable_data["$cable"]["$(repetitions[reps])"]["P_adm"]["$(number_of_iterations[reps-1])"] * input_data_raw["branch"]["$cable"]["rate_i"]
+        end
+    
+
+     # if "else" part is not commented: We assume that the capacity of the cables is equal to the fixed capacity during the first iteration of the 
+     # new prediction horizon loop
+    
+     #=
+     else   # during the first iteration of each prediction horizon loop, set the fixed capacity of the cables as cable rating
+
+        for cable in cable_id
+            data["branch"]["$cable"]["rate_a"] =  input_data_raw["branch"]["$cable"]["rate_a"]
+            data["branch"]["$cable"]["rate_p"] =  input_data_raw["branch"]["$cable"]["rate_p"]
+            data["branch"]["$cable"]["rate_i"] =  input_data_raw["branch"]["$cable"]["rate_i"]
+        end
+     =#
+
+    end
+
+    if hour == 1                         # Initialize admissible power and temperature of first hour of simulation for each new iteration
+        for cable in cable_id
+            cable_data["$cable"]["1"]["P_adm"]["$iteration"] = 100
+            cable_data["$cable"]["1"]["temperature"]["$iteration"] = starting_temperature
+        end
+    end
+
+    if hour == i && hour != 1   # Update all "first" hours of new prediction horizon loops based on the result of final iteration of the previous hour (converged results)
+
+        for cable in cable_id
+            cable_data["$cable"]["$hour"]["P_adm"]["$iteration"] = cable_data["$cable"]["$hour"]["P_adm"]["$(number_of_iterations[reps-1])"]
+            cable_data["$cable"]["$hour"]["temperature"]["$iteration"] = cable_data["$cable"]["$hour"]["temperature"]["$(number_of_iterations[reps-1])"]
+        end
+
+        # If we want to start each prediction loop "blind-folded" we could set T = 75 and P_adm = 100% at every "first" hour of the loop.
+        # This could combine with setting the capacity of first iteration equal to fixed capacity of cables.
+        # number_of_iterations: This variable refers to the final iteration of each hour (or of each prediction horizon loop)
+
+    end
+
     return data
 end
 

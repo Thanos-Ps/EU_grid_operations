@@ -68,7 +68,6 @@ input_data, nodal_data = _EUGO.construct_data_dictionary(tyndp_version, ntcs, ar
 
 
 ########################################################### MODIFICATIONS ############################################################################
-version_flag = "2"                                               # Flag used to define the version of code used in the file data.jl (prepare_hourly_data!)
 prediction_horizon = 6                                           # Prediction horizon: Time horizon for the iterative solution that considers the admissible power
 tolerance = 10^-1                                                # Acceptable tolerance of error for convergence
 repetitions = collect(1:prediction_horizon:number_of_hours)      # find the "connecting points" of horizon loops (first hour of new loop)  
