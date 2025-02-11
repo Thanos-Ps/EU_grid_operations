@@ -6,10 +6,6 @@
 # RES and demand time series
 #######################################
 
-
-######### IMPORTANT: YOU WILL NEED TO DOWNLOAD THE FEATHER FILES AND ADD THEM TO YOUR data_sources FOLDER!!!!!!!
-######### See data_sources/download_links.txt for the download links
-
 # Import packages and create short names
 import DataFrames; const _DF = DataFrames
 import CSV
