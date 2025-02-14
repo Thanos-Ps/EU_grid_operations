@@ -70,10 +70,10 @@ input_data, nodal_data = _EUGO.construct_data_dictionary(tyndp_version, ntcs, ar
 ########################################################### MODIFICATIONS ############################################################################
 prediction_horizon = 6                                           # Prediction horizon: Time horizon for the iterative solution that considers the admissible power
 tolerance = 10^-1                                                # Acceptable tolerance of error for convergence
-sampling_type_flag = "clusters"                                  # Options: "clusters" or "rep_days"
+sampling_type_flag = "rep_days"                                  # Options: "clusters" or "rep_days"
 number_of_clusters = 12
 days_per_cluster = 3
-rep_days = []
+rep_days = [1]                                                   # List with number of the representative days selected for the simulation (each day is expressed with a number between 1-365)
 starting_temperature = 85                                        # Cable temperature at the start of the simulation
 
 # Insert id of cables with dynamic rating
