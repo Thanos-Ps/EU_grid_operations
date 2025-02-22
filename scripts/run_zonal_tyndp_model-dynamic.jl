@@ -19,35 +19,12 @@ import Feather
 import PowerModels; const _PM = PowerModels
 import JSON
 using EU_grid_operations; const _EUGO = EU_grid_operations
+using DCROPF
 
 # Select your favorite solver
 solver = JuMP.optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0)
 
-# Select the TYNDP version to be used:
-# - 2020
-# - 2024
-
-# Select input paramters for:
-# TYNDP 2020:
-#  - Scenario selection: Distributed Energy (DE), National Trends (NT), Global Ambition (GA)
-#  - Planning years: 2025 (NT only), 2030, 2040
-#  - Climate year: 1982, 1984, 2007
-#  - Number of hours: 1 - 8760
-# TYNDP 2024:
-#  - Scenario selection: Distributed Energy (DE), National Trends (NT), Global Ambition (GA)
-#  -  Planning years: 2030, 2040, 2050
-#  -  Climate year: 1995, 2008, 2009
-#  -  Number of hours: 1 - 8760
-# Fetch data: true/false, to parse input data (takes ~ 1 min.)
-
-# A sample set for TYNDP 2024
-# tyndp_version = "2024"
-# fetch_data = true
-# number_of_hours = 8760
-# scenario = "DE"
-# year = "2050"
-# climate_year = "2009"
-# A sample set for TYNDP 2020
+# Define input parameters
 tyndp_version = "2020"
 fetch_data = true
 number_of_hours = 8760
@@ -69,19 +46,41 @@ input_data, nodal_data = _EUGO.construct_data_dictionary(tyndp_version, ntcs, ar
 input_data_raw = deepcopy(input_data)
 
 
-print("######################################", "\n")
-print("### STARTING HOURLY OPTIMISATION ####", "\n")
-print("######################################", "\n")
+# Select Dynamic cable rating parameters
+Tmax = 90
+T0 = 70
+
+# Insert id of cables with dynamic rating
+cable_id = [16, 92, 123]
+
+# Define capacities of branches in offshore grid in p.u. with base value 100 MVA
+cable_capacity = 10
+converter_capacity = 15      
+
+# Include necessary scripts for functions, initializations and other operations
+include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
+create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity)
+
+
+
 
 # Create dictionary for writing out results
 result = Dict{String, Any}("$hour" => nothing for hour in 1:number_of_hours)
-for hour = 1:number_of_hours
-    print("Hour ", hour, " of ", number_of_hours, "\n")
-    # Write time series data into input data dictionary
-    _EUGO.prepare_hourly_data!(input_data, nodal_data, hour)
-    # Solve Network Flow OPF using PowerModels
-    result["$hour"] = _PM.solve_opf(input_data, PowerModels.NFAPowerModel, solver) 
+
+
+hour = 1:number_of_hours
+
+function build_mn_data(file)
+  mp_data = _PM.parse_file(file)
+  return _IM.replicate(mp_data, length(t), Set{String}(["source_type", "name", "source_version", "per_unit"]))
 end
+
+
+# Write time series data into input data dictionary
+_EUGO.prepare_hourly_data!(input_data, nodal_data, hour)
+# Solve Network Flow OPF using PowerModels
+result["$hour"] = _PM.solve_opf(input_data, PowerModels.NFAPowerModel, solver) 
+
 
 ## Write out JSON files
 # Result file, with hourly results
