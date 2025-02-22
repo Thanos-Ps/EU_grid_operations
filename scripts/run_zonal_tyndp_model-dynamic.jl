@@ -27,7 +27,7 @@ solver = JuMP.optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0)
 # Define input parameters
 tyndp_version = "2020"
 fetch_data = true
-number_of_hours = 8760
+number_of_hours = 24
 scenario = "GA"
 year = "2030"
 climate_year = "2007"
@@ -61,25 +61,20 @@ converter_capacity = 15
 include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
 create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity)
 
-
-
-
 # Create dictionary for writing out results
 result = Dict{String, Any}("$hour" => nothing for hour in 1:number_of_hours)
 
-
+number_of_hours = 3
 hour = 1:number_of_hours
 
-function build_mn_data(file)
-  mp_data = _PM.parse_file(file)
-  return _IM.replicate(mp_data, length(t), Set{String}(["source_type", "name", "source_version", "per_unit"]))
+mn = _PM.replicate(input_data,length(hour))
+#_IM.replicate(mp_data, length(t), Set{String}(["source_type", "name", "source_version", "per_unit"]))
+
+for hour = 1:number_of_hours
+  _EUGO.prepare_hourly_data!(mn["nw"]["$hour"], nodal_data, hour)
 end
 
-
-# Write time series data into input data dictionary
-_EUGO.prepare_hourly_data!(input_data, nodal_data, hour)
-# Solve Network Flow OPF using PowerModels
-result["$hour"] = _PM.solve_opf(input_data, PowerModels.NFAPowerModel, solver) 
+DCROPF.solve_dcropf(mn, PowerModels.NFAPowerModel, solver, cable_id, Tmax, T0)
 
 
 ## Write out JSON files

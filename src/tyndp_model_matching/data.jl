@@ -206,7 +206,7 @@ function prepare_hourly_data!(data, nodal_data, hour)
         elseif gen["type"] == "Onshore Wind"
             gen["pmax"] = nodal_data[node]["generation"]["Onshore Wind"]["timeseries"][hour] / data["baseMVA"]
         elseif gen["type"] == "Offshore Wind"
-            println(node)
+            #println(node)
             gen["pmax"] = nodal_data[node]["generation"]["Offshore Wind"]["timeseries"][hour] / data["baseMVA"]
         elseif gen["type"] == "ENS"
             gen["pmax"] = nodal_data[node]["demand"][hour] / data["baseMVA"]
