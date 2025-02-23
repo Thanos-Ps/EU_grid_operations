@@ -67,14 +67,14 @@ result = Dict{String, Any}("$hour" => nothing for hour in 1:number_of_hours)
 number_of_hours = 3
 hour = 1:number_of_hours
 
-mn = _PM.replicate(input_data,length(hour))
+mn_data = _PM.replicate(input_data,length(hour))
 #_IM.replicate(mp_data, length(t), Set{String}(["source_type", "name", "source_version", "per_unit"]))
 
 for hour = 1:number_of_hours
-  _EUGO.prepare_hourly_data!(mn["nw"]["$hour"], nodal_data, hour)
+  _EUGO.prepare_hourly_data!(mn_data["nw"]["$hour"], nodal_data, hour)
 end
 
-DCROPF.solve_dcropf(mn, PowerModels.NFAPowerModel, solver, cable_id, Tmax, T0)
+DCROPF.solve_dcropf(mn_data, PowerModels.NFAPowerModel, solver, cable_id, Tmax, T0)
 
 
 ## Write out JSON files
