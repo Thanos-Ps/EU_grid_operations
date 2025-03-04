@@ -64,13 +64,13 @@ create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity)
 # Create dictionary for writing out results
 result = Dict{String, Any}("$hour" => nothing for hour in 1:number_of_hours)
 
-number_of_hours = 3
-hour = 1:number_of_hours
+starting_hour = 300
+actual_hours = starting_hour:1:starting_hour + number_of_hours-1
 
-mn_data = _PM.replicate(input_data,length(hour))
+mn_data = _PM.replicate(input_data,length(actual_hours))
 #_IM.replicate(mp_data, length(t), Set{String}(["source_type", "name", "source_version", "per_unit"]))
 
-for hour = 1:number_of_hours
+for hour in hours
   _EUGO.prepare_hourly_data!(mn_data["nw"]["$hour"], nodal_data, hour)
 end
 
