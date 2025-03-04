@@ -74,9 +74,9 @@ for hour = 1:number_of_hours
   _EUGO.prepare_hourly_data!(mn_data["nw"]["$hour"], nodal_data, hour)
 end
 
-DCROPF.solve_dcropf(mn_data, PowerModels.NFAPowerModel, solver, cable_id, Tmax, T0)
+result = DCROPF.solve_dcropf(mn_data, PowerModels.NFAPowerModel, solver, cable_id, Tmax, T0)
 
-
+"""
 ## Write out JSON files
 # Result file, with hourly results
 json_string = JSON.json(result)
@@ -98,3 +98,5 @@ json_string = JSON.json(nodal_data)
 open(scenario_file_name,"w") do f
   JSON.print(f, json_string)
 end
+
+"""
