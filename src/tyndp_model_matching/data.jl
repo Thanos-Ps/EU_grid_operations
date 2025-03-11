@@ -56,21 +56,21 @@ function construct_data_dictionary_2020(ntcs, capacity, nodes, demand, scenario,
     
             if g == "Solar PV" 
                 pv_series = pv[pv[!, "area"] .== node_id, climate_year]
-                if !any(pv_series .=== missing) && !isempty(nodal_data[node_id]["generation"][g]["capacity"])
+                if !any(pv_series .=== missing) && !isempty(pv_series) && !isempty(nodal_data[node_id]["generation"][g]["capacity"])
                     nodal_data[node_id]["generation"][g]["timeseries"] =  pv_series .* nodal_data[node_id]["generation"][g]["capacity"]
                 else
                     nodal_data[node_id]["generation"][g]["timeseries"] = zeros(1, 8760)
                 end
             elseif g == "Onshore Wind"
                 wind_series = wind_onshore[wind_onshore[!, "area"] .== node_id, climate_year]
-                if  !any(wind_series .=== missing) && !isempty(nodal_data[node_id]["generation"][g]["capacity"])
+                if  !any(wind_series .=== missing) && !isempty(wind_series) && !isempty(nodal_data[node_id]["generation"][g]["capacity"])
                     nodal_data[node_id]["generation"][g]["timeseries"] =  wind_series .* nodal_data[node_id]["generation"][g]["capacity"]
                 else
                     nodal_data[node_id]["generation"][g]["timeseries"] = zeros(1, 8760)
                 end
             elseif g == "Offshore Wind"
                 wind_series =  wind_offshore[wind_offshore[!, "area"] .== node_id, climate_year]
-                if  !any(wind_series .=== missing) && !isempty(nodal_data[node_id]["generation"][g]["capacity"])
+                if  !any(wind_series .=== missing) && !isempty(wind_series) && !isempty(nodal_data[node_id]["generation"][g]["capacity"])
                     nodal_data[node_id]["generation"][g]["timeseries"] = wind_series .* nodal_data[node_id]["generation"][g]["capacity"]
                 else
                     nodal_data[node_id]["generation"][g]["timeseries"] = zeros(1, 8760)
