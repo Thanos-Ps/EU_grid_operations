@@ -6,16 +6,16 @@
 using Plots
 
 ################### Load results from JSON files #######################
-
+"""
 include("loading_results.jl")
 result = result_json_dict
 input_data_raw  = input_json_dict
-
+"""
 ########################################################################
 
 
 # Select cable
-selected_cable = 120
+selected_cable = 113
 
 # Discretize the range of cable loading in %
 y = LinRange(0, 100, 101)
