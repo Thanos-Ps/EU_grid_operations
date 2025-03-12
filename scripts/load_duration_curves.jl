@@ -27,7 +27,7 @@ hour_duration = zeros(length(y))
 hour_id = [Int[] for _ in 1:length(y)-1]
 
 # Precompute current load for all hours
-number_of_hours = 8760  # Replace with actual number
+#number_of_hours = 8760  # Replace with actual number
 current_load = [100 * abs(result["$hour"]["solution"]["branch"]["$selected_cable"]["pt"]) / 
                 input_data_raw["branch"]["$selected_cable"]["rate_a"] for hour in 1:number_of_hours]
 
