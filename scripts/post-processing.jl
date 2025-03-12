@@ -12,7 +12,7 @@ for hour in hours
           
     T = result["solution"]["nw"]["$hour"]["branch"]["$cable_id"]["Temperature"]
     p_to = 100*result["solution"]["nw"]["$hour"]["branch"]["$cable_id"]["pt"]/input_data["branch"]["$cable_id"]["rate_a"]
-    p_abs = 100*result["solution"]["nw"]["$hour"]["branch"]["$cable_id"]["p_abs_t"]/input_data["branch"]["$cable_id"]["rate_a"]
+    p_abs = 100*result["solution"]["nw"]["$hour"]["branch"]["$cable_id"]["p_abs"]/input_data["branch"]["$cable_id"]["rate_a"]
     difference = p_abs - abs(p_to)
     push!(temperature_values, T)
     push!(power_values, p_to)
