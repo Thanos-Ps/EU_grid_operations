@@ -15,7 +15,7 @@ input_data_raw  = input_json_dict
 
 
 # Select cable
-selected_cable = 113
+selected_cable = 20
 
 # Discretize the range of cable loading in %
 y = LinRange(0, 100, 101)
@@ -41,7 +41,7 @@ for i in 1:length(y) -1
     end
 end
 
-# Normalize hour duration
+# Normalize hour duration (in % of time)
 hour_duration = 100 * hour_duration / maximum(hour_duration)
 
 # Plot the load duration curve
@@ -54,6 +54,25 @@ plot(hour_duration, y, xlabel="Percentage in Time [%]", ylabel="Loading [%]",
      tickfontsize=14,
      legendfontsize = 12)     # Bigger tick labels
 
+
+
+############## Alternative way of plotting the load duration curve #################
+# Sort load data in descending order
+sorted_load = sort(current_load, rev=true)
+# Calculate percentage of time
+time_percentage = (1:length(sorted_load)) ./ length(sorted_load) .* 100
+
+
+# Create the load duration curve plot
+plot(time_percentage, sorted_load,
+    xlabel="Time Percentage (%)",
+    ylabel="Load (units)",
+    title="Load Duration Curve",
+    label=false,
+    linewidth=2,
+    color=:blue,
+    grid=true,
+    framestyle=:box)
 
 #=
      plot(hour_duration, y, xlabel="Percentage in Time [%]", ylabel="Loading [%]",

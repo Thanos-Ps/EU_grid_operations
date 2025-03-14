@@ -48,22 +48,22 @@ solver = JuMP.optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0)
 # year = "2050"
 # climate_year = "2009"
 # A sample set for TYNDP 2020
-#"""
+"""
 tyndp_version = "2020"
 fetch_data = true
 number_of_hours = 8760
 scenario = "GA"
 year = "2030"
 climate_year = "2007"
-#"""
 """
+#"""
 tyndp_version = "2024"
 fetch_data = true
 number_of_hours = 8760
 scenario = "DE"
 year = "2050"
 climate_year = "2009"
-"""
+#"""
 # Load grid and scenario data
 if fetch_data == true
     pv, wind_onshore, wind_offshore = _EUGO.load_res_data()
