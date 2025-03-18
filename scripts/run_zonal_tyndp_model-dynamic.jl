@@ -41,24 +41,21 @@ solver = JuMP.optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0)
 #  -  Number of hours: 1 - 8760
 # Fetch data: true/false, to parse input data (takes ~ 1 min.)
 
-# A sample set for TYNDP 2024
-"""
- tyndp_version = "2024"
- fetch_data = true
- number_of_hours = 300
- scenario = "DE"
- year = "2050"
- climate_year = "2009"
-"""
-# A sample set for TYNDP 2020
-#"""
-tyndp_version = "2020"
+tyndp_version = "2024"
 fetch_data = true
-number_of_hours = 24
-scenario = "DE"
-year = "2030"
-climate_year = "2007"
-#"""
+number_of_hours = 720
+
+if tyndp_version == "2020"
+  scenario = "DE"
+  year = "2030"
+  climate_year = "2007"
+
+elseif tyndp_version == "2024"
+  scenario = "DE"
+  year = "2050"
+  climate_year = "2009"
+end
+
 
 # Load grid and scenario data
 if fetch_data == true
@@ -83,15 +80,15 @@ Tmax = 90
 T0 = 70
 
 # Insert id of cables with dynamic rating
-cable_id = [16, 92, 123]
+cable_id = [16]
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
 cable_capacity = 10
-converter_capacity = 15      
+converter_capacity = 150      
 
 # Include necessary scripts for functions, initializations and other operations
 include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
-create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity)
+create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity, tyndp_version)
 
 # Create dictionary for writing out results
 result = Dict{String, Any}("$hour" => nothing for hour in 1:number_of_hours)
