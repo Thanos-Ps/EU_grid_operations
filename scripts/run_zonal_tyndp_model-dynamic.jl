@@ -43,7 +43,7 @@ solver = JuMP.optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0)
 
 tyndp_version = "2024"
 fetch_data = true
-number_of_hours = 720
+number_of_hours = 8760
 
 if tyndp_version == "2020"
   scenario = "DE"
@@ -71,13 +71,15 @@ elseif tyndp_version == "2024"
 end
 input_data, nodal_data = _EUGO.construct_data_dictionary(tyndp_version, ntcs, arcs, capacity, nodes, demand, scenario_id, climate_year, gen_types, pv, wind_onshore, wind_offshore, gen_costs, emission_factor, inertia_constants, node_positions)
 
-# Make copy of input data dictionary as RES and demand data updated for each hour
-input_data_raw = deepcopy(input_data)
-
 
 # Select Dynamic cable rating parameters
-Tmax = 90
-T0 = 70
+Tmax = 90                                                 # [degC], Temperature limit of the cables 
+T0 = 70                                                   # [degC], Initial temperature of the cables 
+prediction_horizon = 24                                   # [hours], For the optimization problem 
+sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
+number_of_clusters = 6
+days_per_cluster = 1
+rep_days = collect(1:10:365)
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
 cable_capacity = 10
@@ -85,23 +87,63 @@ converter_capacity = 15
 
 # Include necessary scripts for functions, initializations and other operations
 include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
+include("../src/dynamic_cable_rating/temporal_sampling.jl")
 
 # Modify the input_data dictionary to add the offshore grid and extract the cable_id vector
 cable_id = create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity, tyndp_version)
 
-# Create dictionary for writing out results
-result = Dict{String, Any}("$hour" => nothing for hour in 1:number_of_hours)
+# Make copy of input data dictionary as RES and demand data updated for each hour (and also include the created offhsore grid)
+input_data_raw = deepcopy(input_data)
 
-
-hour = 1:number_of_hours
-mn_data = _PM.replicate(input_data,length(hour))
-#_IM.replicate(mp_data, length(t), Set{String}(["source_type", "name", "source_version", "per_unit"]))
-
-for hour in 1:number_of_hours
-  _EUGO.prepare_hourly_data!(mn_data["nw"]["$hour"], nodal_data, hour)
+# Perform the temporal sampling based on the selected option
+if sampling_type_flag == "rep_days"
+  number_of_clusters = length(rep_days)
+  t, repetitions = temporal_sampling!(sampling_type_flag, rep_days, nothing)
+elseif sampling_type_flag =="clusters"
+  t, repetitions = temporal_sampling!(sampling_type_flag, number_of_clusters, days_per_cluster)
 end
 
-result = DCROPF.solve_dcropf(mn_data, PowerModels.NFAPowerModel, solver, cable_id, Tmax, T0)
+
+# Create dictionary for writing out results
+# The result dictionary containts keys for each sweep of the whole simulation horizon from the prediction horizon
+# Basically the reps is a counter for the sweeps within each time slice. While the reps_total is a counter that summs all the sweeps of the simulation horizon.
+# Warning: We assume that each time slice has the same size. So it doesn't matter that we choose the size of the first vector of repetitions. Could be improved though...
+result = Dict{String, Any}("$reps_total" => nothing for reps_total in 1:length(repetitions)*length(repetitions[1]))
+
+
+# Initialize variables as arrays to avoid declaring global variables inside the loops
+# Note: To access or update those variables inside the loop they should be called as reps[1]
+# reps is a counter that shows at which number of repetitions we are at. 
+# As number of repetitions we refer to the loops carried out by the prediction horizon loop to sweep the time slice.
+reps = [0]
+reps_total = [0]
+hour = [0]
+
+# Replicate the input data for all the hours in the prediction horizon
+mn_data = _PM.replicate(input_data,length(1:prediction_horizon))
+
+
+for j in 1:number_of_clusters
+
+  # reps counter is initialized to 0 before the sweeping of a new time slice starts.
+  reps[1] = 0
+
+  for i in repetitions[j]            # repeat the horizon loops as many times needed to complete simulation time
+    
+    reps[1] += 1        
+    reps_total[1] += 1
+
+    # Update RES and demand data for the corresponding hours in the multi-network data
+    for network in 1:prediction_horizon
+      hour[1] = i + network - 1
+      _EUGO.prepare_hourly_data!(mn_data["nw"]["$network"], nodal_data, hour[1])
+    end
+    # Solve the DCR-OPF problem for the given prediction horizon (simultaneously)
+    result["$(reps_total[1])"] = DCROPF.solve_dcropf(mn_data, PowerModels.NFAPowerModel, solver, cable_id, Tmax, T0)
+ 
+  end
+
+end
 
 """
 ## Write out JSON files
