@@ -52,6 +52,8 @@ elseif tyndp_version == "2024"
 
 end
 
+# Create a list that contains the IDs of the offshore cables to be used in the dynamic cable rating.
+cable_id = [BE00_UK00_id, UK00_NL00_id, BEOS_NLOS_id]
 
 # Adding offshore Beglian bus/zone  (BEOS)
 input_data["bus"]["$BEOS_id"] = Dict{String, Any}(
@@ -242,6 +244,8 @@ input_data["branch"]["$UK00_NL00_id"]["name"] = "UKOS - NLOS"
 input_data["branch"]["$UK00_NL00_id"]["rate_a"] = cable_capacity
 input_data["branch"]["$UK00_NL00_id"]["rate_i"] = cable_capacity
 input_data["branch"]["$UK00_NL00_id"]["rate_p"] = cable_capacity
+
+return cable_id
 
 end
 

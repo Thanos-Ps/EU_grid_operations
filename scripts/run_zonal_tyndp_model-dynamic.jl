@@ -79,16 +79,15 @@ input_data_raw = deepcopy(input_data)
 Tmax = 90
 T0 = 70
 
-# Insert id of cables with dynamic rating
-cable_id = [16]
-
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
 cable_capacity = 10
-converter_capacity = 150      
+converter_capacity = 15      
 
 # Include necessary scripts for functions, initializations and other operations
 include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
-create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity, tyndp_version)
+
+# Modify the input_data dictionary to add the offshore grid and extract the cable_id vector
+cable_id = create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity, tyndp_version)
 
 # Create dictionary for writing out results
 result = Dict{String, Any}("$hour" => nothing for hour in 1:number_of_hours)
