@@ -77,8 +77,8 @@ Tmax = 90                                                 # [degC], Temperature 
 T0 = 70                                                   # [degC], Initial temperature of the cables 
 prediction_horizon = 24                                   # [hours], For the optimization problem 
 sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
-number_of_clusters = 6
-days_per_cluster = 1
+number_of_clusters = 12
+days_per_cluster = 3
 rep_days = collect(1:10:365)
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
@@ -105,15 +105,15 @@ end
 
 
 # Create dictionary for writing out results
-# The result dictionary containts keys for each sweep of the whole simulation horizon from the prediction horizon
-# Basically the reps is a counter for the sweeps within each time slice. While the reps_total is a counter that summs all the sweeps of the simulation horizon.
-# Warning: We assume that each time slice has the same size. So it doesn't matter that we choose the size of the first vector of repetitions. Could be improved though...
+# The result dictionary containts keys for each sweep of the whole simulation horizon from the prediction horizon, i.e. each repetition
+# Basically the reps is a counter for the sweeps within each time slice. While the reps_total is a counter that summs all the sweeps of the time slices, to cover the whole simulation time.
+# Warning: We assumed that each time slice has the same size. So it doesn't matter that we choose the size of the first vector of repetitions. Could be improved though...
 result = Dict{String, Any}("$reps_total" => nothing for reps_total in 1:length(repetitions)*length(repetitions[1]))
 
 
 # Initialize variables as arrays to avoid declaring global variables inside the loops
-# Note: To access or update those variables inside the loop they should be called as reps[1]
-# reps is a counter that shows at which number of repetitions we are at. 
+# Note: To access or update those variables inside the loop they should be called as reps[1] etc.
+# reps is a counter that shows at which number of repetitions we are at (for the current time slice)
 # As number of repetitions we refer to the loops carried out by the prediction horizon loop to sweep the time slice.
 reps = [0]
 reps_total = [0]
@@ -128,12 +128,13 @@ for j in 1:number_of_clusters
   # reps counter is initialized to 0 before the sweeping of a new time slice starts.
   reps[1] = 0
 
-  for i in repetitions[j]            # repeat the horizon loops as many times needed to complete simulation time
+  for i in repetitions[j]            # repeat the prediction horizon loops as many times needed to complete simulation time
     
     reps[1] += 1        
     reps_total[1] += 1
 
     # Update RES and demand data for the corresponding hours in the multi-network data
+    # Each network represents an hour within the prediction horizon
     for network in 1:prediction_horizon
       hour[1] = i + network - 1
       _EUGO.prepare_hourly_data!(mn_data["nw"]["$network"], nodal_data, hour[1])
