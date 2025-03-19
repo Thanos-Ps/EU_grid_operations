@@ -168,6 +168,55 @@ function determine_hours_of_re_level!(nodal_data, lower_level, upper_level)
 end
 
 
+function determine_hours_of_ens!(result, input_data)
+    gens_ens = []
+    hours_ens = []
+    list_gens_ens_loc = []
+    
+
+    for (g, gen) in input_data["gen"]
+        type = gen["type"]
+        if type == "ENS"
+            push!(gens_ens, g)   
+            push!(list_gens_ens_loc, gen["node"])  
+        end
+    end
+
+    for hour in 1:number_of_hours
+        for g in gens_ens
+            if result["$hour"]["solution"]["gen"][g]["pg"] > 0
+                push!(hours_ens, hour)
+                break # to get only the hours of ens (but do not account the number of ens generators)
+            end
+        end
+    end
+
+    num_of_gens_ens = zeros(length(hours_ens),1)
+    loc_gens_ens = [String[] for _ in 1:length(hours_ens)]
+    ids_gens_ens = [String[] for _ in 1:length(hours_ens)]
+
+
+    for hour in 1:length(hours_ens)
+        for g in gens_ens
+            if result["$hour"]["solution"]["gen"][g]["pg"] > 0
+                num_of_gens_ens[hour] += 1
+                push!(loc_gens_ens[hour], input_data["gen"][g]["node"])
+                push!(ids_gens_ens[hour], g)
+            end
+        end
+    end
+
+    # Get a vector with elements with true or false based on whether load sheddding occurs (true = load shedding)
+        # Initialize a column vector with 8760 elements to store binary values
+        load_shedded_hours = falses(8760)
+        load_shedded_hours[hours_ens] .= true
+
+
+    return hours_ens, num_of_gens_ens, loc_gens_ens, gens_ens, list_gens_ens_loc, ids_gens_ens, load_shedded_hours
+end
+
+# hours_ens = findall(load_shedded_hours)
+
 # Import packages and create short names
 import DataFrames; const _DF = DataFrames
 import CSV
@@ -246,12 +295,16 @@ function find_max_cost_generator(input_data, result, target_node, hour)
     # Access the generator list
     generators_all = input_data["gen"]  # Dictionary with all generators included in the input_data dictionary (larger)
     generators_zonal = result["$hour"]["solution"]["gen"] # Dictionary with all generators included in the results of the zonal model (smaller)
-    dispatched = [] # Initialization of array that will store list of dispatched generators
+    dispatched_gens_id = [] # Initialization of array that will store list of dispatched generators
+    dispatched_gens_type = []
+    dispatched_gens_cost = []
 
     for (g,gen) in generators_zonal # Sweep through generators of zonal model 
         node = generators_all[g]["node"] # Extract the node name 
         if node == target_node && generators_zonal[g]["pg"] > 0 # check if they belong to target node (BE) and are dispatched
-            push!(dispatched, g) # Store number of generator that satisfies conditional (type: String)
+            push!(dispatched_gens_id, g) # Store number of generator that satisfies conditional (type: String)
+            push!(dispatched_gens_type, generators_all[g]["type"]) # Store type of generator that satisfies conditional (type: String)
+            push!(dispatched_gens_cost, generators_all[g]["cost"][2]) # Store cost of generator that satisfies conditional (type: Float)
         end
     end
 
@@ -259,7 +312,7 @@ function find_max_cost_generator(input_data, result, target_node, hour)
     max_cost = -Inf
     max_cost_gen = nothing
 
-    for g in dispatched
+    for g in dispatched_gens_id
         cost = generators_all[g]["cost"][2]  # Access the second element of the cost array
         if cost > max_cost
             max_cost = cost
@@ -268,7 +321,7 @@ function find_max_cost_generator(input_data, result, target_node, hour)
     end
 
     
-    return max_cost, max_cost_gen, dispatched
+    return max_cost, max_cost_gen, dispatched_gens_id, dispatched_gens_type, dispatched_gens_cost
 end
 
 
