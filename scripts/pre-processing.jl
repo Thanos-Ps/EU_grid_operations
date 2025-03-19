@@ -170,33 +170,24 @@ end
 
 function determine_hours_of_ens!(result, input_data)
     gens_ens = []
-    hours_ens = []
     list_gens_ens_loc = []
-    
 
+    # Identify generators with ENS type.
     for (g, gen) in input_data["gen"]
-        type = gen["type"]
-        if type == "ENS"
-            push!(gens_ens, g)   
-            push!(list_gens_ens_loc, gen["node"])  
+        if gen["type"] == "ENS"
+            push!(gens_ens, g)
+            push!(list_gens_ens_loc, gen["node"])
         end
     end
 
-    for hour in 1:number_of_hours
-        for g in gens_ens
-            if result["$hour"]["solution"]["gen"][g]["pg"] > 0
-                push!(hours_ens, hour)
-                break # to get only the hours of ens (but do not account the number of ens generators)
-            end
-        end
-    end
+    # Preallocate fixed-size arrays for each hour (assuming number_of_hours = 8760).
+    num_of_gens_ens = zeros(Int, 8760)              # Count of ENS generators per hour.
+    loc_gens_ens = [String[] for _ in 1:8760]         # List of locations per hour.
+    ids_gens_ens = [String[] for _ in 1:8760]         # List of generator IDs per hour.
+    load_shedded_hours = falses(8760)                 # Binary vector for load shedding.
 
-    num_of_gens_ens = zeros(length(hours_ens),1)
-    loc_gens_ens = [String[] for _ in 1:length(hours_ens)]
-    ids_gens_ens = [String[] for _ in 1:length(hours_ens)]
-
-
-    for hour in 1:length(hours_ens)
+    # Loop over each hour.
+    for hour in 1:8760
         for g in gens_ens
             if result["$hour"]["solution"]["gen"][g]["pg"] > 0
                 num_of_gens_ens[hour] += 1
@@ -204,15 +195,11 @@ function determine_hours_of_ens!(result, input_data)
                 push!(ids_gens_ens[hour], g)
             end
         end
+        # Mark the hour as load shed if any ENS generator produced power.
+        load_shedded_hours[hour] = num_of_gens_ens[hour] > 0
     end
 
-    # Get a vector with elements with true or false based on whether load sheddding occurs (true = load shedding)
-        # Initialize a column vector with 8760 elements to store binary values
-        load_shedded_hours = falses(8760)
-        load_shedded_hours[hours_ens] .= true
-
-
-    return hours_ens, num_of_gens_ens, loc_gens_ens, gens_ens, list_gens_ens_loc, ids_gens_ens, load_shedded_hours
+    return num_of_gens_ens, loc_gens_ens, gens_ens, list_gens_ens_loc, ids_gens_ens, load_shedded_hours
 end
 
 # hours_ens = findall(load_shedded_hours)
