@@ -1,25 +1,33 @@
 using Plots
 
-# Due to the temporal sampling, only 1 time slice will be plotted (at least for now), to ensure continuity of time.
-selected_cluster = 6
+# Due to the temporal sampling, only 1 time slice (cluster) will be plotted (at least for now), to ensure continuity of time.
+selected_cluster = 2
 selected_cable = cable_id[1]
 temperature_values = []
 power_values = []
 abs_power_values = []
 diff_values = []
+# Initialize counters
+hour = [0]
+reps_total = [0]
+# Calibrate the reps_total counter to the beginning of the selected time slice.
+reps_total[1] = length(repetitions[1])*(selected_cluster -1)
 
-hours = 1:prediction_horizon -1 # by doing that we are not plotting the last hour because the difference between pabs and p_to is large! (actual issue is not resloved)
+hours = 1:prediction_horizon*length(repetitions[selected_cluster])  # by doing that we are not plotting the last hour because the difference between pabs and p_to is large! (actual issue is not resloved)
 
-for hour in 1:prediction_horizon-1
-          
-    T = result["$selected_cluster"]["solution"]["nw"]["$hour"]["branch"]["$selected_cable"]["Temperature"]
-    p_to = 100*result["$selected_cluster"]["solution"]["nw"]["$hour"]["branch"]["$selected_cable"]["pt"]/input_data["branch"]["$selected_cable"]["rate_a"]
-    p_abs = 100*result["$selected_cluster"]["solution"]["nw"]["$hour"]["branch"]["$selected_cable"]["p_abs"]/input_data["branch"]["$selected_cable"]["rate_a"]
-    difference = p_abs - abs(p_to)
-    push!(temperature_values, T)
-    push!(power_values, p_to)
-    #push!(abs_power_values, p_abs)
-    push!(diff_values, difference)
+for i in repetitions[selected_cluster]
+    reps_total[1] += 1
+    for network_hour in 1:prediction_horizon
+        #hour[1] = i + network_hour - 1 
+        T = result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["branch"]["$selected_cable"]["Temperature"]
+        p_to = 100*result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["branch"]["$selected_cable"]["pt"]/input_data["branch"]["$selected_cable"]["rate_a"]
+        p_abs = 100*result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["branch"]["$selected_cable"]["p_abs"]/input_data["branch"]["$selected_cable"]["rate_a"]
+        difference = p_abs - abs(p_to)
+        push!(temperature_values, T)
+        push!(power_values, p_to)
+        #push!(abs_power_values, p_abs)
+        push!(diff_values, difference)
+    end
 
 end
 

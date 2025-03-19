@@ -77,8 +77,8 @@ Tmax = 90                                                 # [degC], Temperature 
 T0 = 70                                                   # [degC], Initial temperature of the cables 
 prediction_horizon = 24                                   # [hours], For the optimization problem 
 sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
-number_of_clusters = 12
-days_per_cluster = 3
+number_of_clusters = 6
+days_per_cluster = 2
 rep_days = collect(1:10:365)
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
@@ -96,6 +96,7 @@ cable_id = create_meshed_offshore_grid!(input_data,cable_capacity,converter_capa
 input_data_raw = deepcopy(input_data)
 
 # Perform the temporal sampling based on the selected option
+# Note: The temporal sampling function works only for number_of_hours = 8760.
 if sampling_type_flag == "rep_days"
   number_of_clusters = length(rep_days)
   t, repetitions = temporal_sampling!(sampling_type_flag, rep_days, nothing)
@@ -135,12 +136,12 @@ for j in 1:number_of_clusters
 
     # Update RES and demand data for the corresponding hours in the multi-network data
     # Each network represents an hour within the prediction horizon
-    for network in 1:prediction_horizon
-      hour[1] = i + network - 1
-      _EUGO.prepare_hourly_data!(mn_data["nw"]["$network"], nodal_data, hour[1])
+    for network_hour in 1:prediction_horizon
+      hour[1] = i + network_hour - 1
+      _EUGO.prepare_hourly_data!(mn_data["nw"]["$network_hour"], nodal_data, hour[1])
     end
     # Solve the DCR-OPF problem for the given prediction horizon (simultaneously)
-    result["$(reps_total[1])"] = DCROPF.solve_dcropf(mn_data, PowerModels.NFAPowerModel, solver, cable_id, Tmax, T0)
+    result["$(reps_total[1])"] = DCROPF.solve_dcropf(mn_data, PowerModels.NFAPowerModel, solver, cable_id, Tmax, T0, result, reps[1], reps_total[1], prediction_horizon)
  
   end
 
