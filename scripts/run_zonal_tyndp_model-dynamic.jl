@@ -77,8 +77,8 @@ Tmax = 90                                                 # [degC], Temperature 
 T0 = 70                                                   # [degC], Initial temperature of the cables 
 prediction_horizon = 24                                   # [hours], For the optimization problem 
 sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
-number_of_clusters = 6
-days_per_cluster = 2
+number_of_clusters = 12
+days_per_cluster = 3
 rep_days = collect(1:10:365)
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
