@@ -74,11 +74,11 @@ input_data, nodal_data = _EUGO.construct_data_dictionary(tyndp_version, ntcs, ar
 
 # Select Dynamic cable rating parameters
 Tmax = 90                                                 # [degC], Temperature limit of the cables 
-T0 = 70                                                   # [degC], Initial temperature of the cables 
+T0 = 85                                                   # [degC], Initial temperature of the cables 
 prediction_horizon = 24                                   # [hours], For the optimization problem 
 sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
-number_of_clusters = 12
-days_per_cluster = 3
+number_of_clusters = 24
+days_per_cluster = 2
 rep_days = collect(1:10:365)
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA

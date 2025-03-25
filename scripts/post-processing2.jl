@@ -1,7 +1,7 @@
 using Plots
 
 # Due to the temporal sampling, only 1 time slice (cluster) will be plotted (at least for now), to ensure continuity of time.
-selected_cluster = 10
+selected_cluster = 20
 selected_cable = cable_id[3]
 temperature_values = []
 power_values = []
@@ -50,15 +50,16 @@ for j in 1:number_of_clusters
 
         for network_hour in 1:prediction_horizon
             hour[1] = i + network_hour - 1 
-            p_pos_f= 100*result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["branch"]["$selected_cable"]["p_pos_f"]/input_data["branch"]["$selected_cable"]["rate_a"]
-            p_neg_f = 100*result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["branch"]["$selected_cable"]["p_neg_f"]/input_data["branch"]["$selected_cable"]["rate_a"]
+            for cable in cable_id
+                p_pos_f = 100*result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["branch"]["$cable"]["p_pos_f"]/input_data["branch"]["$cable"]["rate_a"]
+                p_neg_f = 100*result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["branch"]["$cable"]["p_neg_f"]/input_data["branch"]["$cable"]["rate_a"]
             
-            if p_pos_f*p_neg_f != 0 
-                if hour[1] != repetitions[j][reps[1]] + prediction_horizon - 1 # check if the hour is the last one from the prediction horizon and thus useless
-                    push!(prob_hours, hour[1])
+                if p_pos_f*p_neg_f != 0 
+                    if hour[1] != repetitions[j][reps[1]] + prediction_horizon - 1 # check if the hour is the last one from the prediction horizon and thus useless
+                        push!(prob_hours, hour[1])
+                    end
                 end
             end
-
         end
     end
 end
@@ -78,7 +79,7 @@ plot(p1, p3, layout =(2,1))
 # Relationship between hour and reps_total, nw for a given temporal sampling method and parameters.
 # For a desired hour, get reps_total and nw to acces the data from the dictionary
 
-selected_hour = 4428
+selected_hour = 1847
 #selected_hour = repetitions[selected_cluster][1] + selected_hour - 1
 # Initialize counters
 reps_total = [0]
