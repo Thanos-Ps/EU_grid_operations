@@ -72,13 +72,30 @@ end
 input_data, nodal_data = _EUGO.construct_data_dictionary(tyndp_version, ntcs, arcs, capacity, nodes, demand, scenario_id, climate_year, gen_types, pv, wind_onshore, wind_offshore, gen_costs, emission_factor, inertia_constants, node_positions)
 
 
-# Select Dynamic cable rating parameters
+# Select Dynamic Cable Rating parameters
 Tmax = 90                                                 # [degC], Temperature limit of the cables 
 T0 = 70                                                   # [degC], Initial temperature of the cables 
 prediction_horizon = 24                                   # [hours], For the optimization problem 
+time_elapsed = 3600                                       # [s], Time step of the simulation        
+time_constant = 100000                                    # [s], Thermal time constant of the cables   
+temp_to_pow_ratio = 0.9                                   # [degC/%], parameter of the thermal model
+constraint_relax_factor = 10                              # [-], Factor to relax the constraints for the power limit of the dcr cables
+
+# Create a dictionary that contains the DCR parameters
+dcr_data = Dict{String, Any}(
+  "Tmax" => Tmax,
+  "T0" => T0,
+  "prediction_horizon" => prediction_horizon, 
+  "time_elapsed" => time_elapsed, 
+  "time_constant" => time_constant, 
+  "temp_to_pow_ratio" => temp_to_pow_ratio,
+  "constraint_relax_factor" => constraint_relax_factor
+  )
+
+# Select the temporal sampling method and parameters
 sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
-number_of_clusters = 24
-days_per_cluster = 4
+number_of_clusters = 3
+days_per_cluster = 1
 rep_days = collect(1:10:365)
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
@@ -141,7 +158,7 @@ for j in 1:number_of_clusters
       _EUGO.prepare_hourly_data!(mn_data["nw"]["$network_hour"], nodal_data, hour[1])
     end
     # Solve the DCR-OPF problem for the given prediction horizon (simultaneously)
-    result["$(reps_total[1])"] = DCROPF.solve_dcropf(mn_data, PowerModels.NFAPowerModel, solver, cable_id, Tmax, T0, result, reps[1], reps_total[1], prediction_horizon)
+    result["$(reps_total[1])"] = DCROPF.solve_dcropf(mn_data, PowerModels.NFAPowerModel, solver, cable_id, dcr_data, result, reps[1], reps_total[1], prediction_horizon)
  
   end
 
