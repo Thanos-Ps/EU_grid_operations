@@ -1,8 +1,8 @@
 using Plots
 
 # Due to the temporal sampling, only 1 time slice (cluster) will be plotted (at least for now), to ensure continuity of time.
-selected_cluster = 5
-selected_cable = cable_id[1]
+selected_cluster = 1
+selected_cable = cable_id[3]
 temperature_values = []
 power_values = []
 abs_power_values = []
@@ -31,6 +31,42 @@ for i in repetitions[selected_cluster]
 
 end
 
+# Check if p_abs > |p_to| for any hour of the simulation
+prob_hours = []
+# Initialize counters
+hour = [0]
+reps_total = [0]
+reps = [0]
+
+for j in 1:number_of_clusters
+    reps[1] = 0
+    
+    for i in repetitions[j]
+        reps_total[1] += 1
+        reps[1] += 1
+
+        for network_hour in 1:prediction_horizon
+            hour[1] = i + network_hour - 1 
+            for cable in cable_id
+                p_abs = result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["branch"]["$cable"]["p_abs"]
+                p_to = result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["branch"]["$cable"]["pt"]
+                difference = (p_abs - abs(p_to))
+                if difference > 10e-1
+                    #if hour[1] != repetitions[j][reps[1]] + prediction_horizon - 1 # check if the hour is the last one from the prediction horizon and thus useless
+                        push!(prob_hours, hour[1])
+                    #end
+                end
+            end
+        end
+    end
+end
+
+println("Problematic hours: ")
+println("\n")
+println(prob_hours)
+println("\n")
+println(length(prob_hours))
+
 p1 = plot(hours, power_values, xlabel="Hour", ylabel="Rating [%]", title="Loading of Cable $selected_cable", legend = false)
 #p1 = plot!(hours, abs_power_values, xlabel="Hour", ylabel="Rating [%]", title="Loading of Cable $selected_cable", legend = false)
 p2 = plot(hours, abs_power_values, xlabel="Hour", ylabel="Rating [%]", title="Abs Power of Cable $selected_cable", legend = false)
@@ -38,11 +74,13 @@ p3 = plot(hours, temperature_values, xlabel="Hour", ylabel="[degC]", title="Temp
 p4 = plot(hours, diff_values, xlabel="Hour", title="P_abs - |P_to|", legend = false)
 plot(p1,p4, p3, layout =(3,1))
 
+
+
 ###################################################################################################
 # Relationship between hour and reps_total, nw for a given temporal sampling method and parameters.
 # For a desired hour, get reps_total and nw to acces the data from the dictionary
 
-selected_hour = 23
+selected_hour = 2
 selected_hour = repetitions[selected_cluster][1] + selected_hour - 1
 # Initialize counters
 reps_total = [0]
