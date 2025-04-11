@@ -1,4 +1,3 @@
-
 # Import packages and create short names
 import DataFrames; const _DF = DataFrames
 import CSV
@@ -94,10 +93,11 @@ dcr_data = Dict{String, Any}(
   )
 
 # Select the temporal sampling method and parameters
-sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
+sampling_type_flag = "rep_days"                           # Options: "clusters" or "rep_days"
 number_of_clusters = 2
 days_per_cluster = 2
-rep_days = collect(1:10:365)
+#rep_days = collect(1:10:365)
+rep_days = 1
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
 cable_capacity = 20

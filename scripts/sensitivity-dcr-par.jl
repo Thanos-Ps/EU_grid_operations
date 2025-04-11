@@ -87,7 +87,7 @@ examined_prediction_horizon = [24, 168, 720]                                    
 examined_time_constant = [15*3600, 27*3600, 35*3600]
 rescaled_time_constant = examined_time_constant/3600                             # [s], Thermal time constant of the cables   
 examined_temp_to_pow_ratio = [0.6, 0.72, 0.9]                                    # [degC/%], parameter of the thermal model
-examined_T_amb = [8,13,18]  
+examined_T_amb = [8, 13, 18]  
 
 # Define fixed DCR parameters
 Tmax = 90                                                 # [degC], Temperature limit of the cables 
