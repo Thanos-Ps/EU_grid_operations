@@ -206,9 +206,9 @@ input_data["branch"]["$UK00_UKOS_id"] = Dict{String, Any}(
     # Modifiable values
     "f_bus" => UK00_id,
     "t_bus" => UKOS_id,
-    "rate_a" => 2*converter_capacity,
-    "rate_i" => 2*converter_capacity,
-    "rate_p" => 2*converter_capacity,
+    "rate_a" => converter_capacity,
+    "rate_i" => converter_capacity,
+    "rate_p" => converter_capacity,
     "name" => "UK00-UKOS",
     "source_id" => Any["branch", UK00_UKOS_id],
     "number_id" => UK00_UKOS_id,

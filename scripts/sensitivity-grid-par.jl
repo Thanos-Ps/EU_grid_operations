@@ -1,4 +1,3 @@
-
 # Import packages and create short names
 import DataFrames; const _DF = DataFrames
 import CSV
@@ -9,10 +8,22 @@ import PowerModels; const _PM = PowerModels
 import JSON
 using EU_grid_operations; const _EUGO = EU_grid_operations
 using DCROPF
+using Plots
+
+
+# Function to calculate the economic benefit
+function calculate_mean_obj(result,final_reps_total, prediction_horizon)
+  mean_obj = 0
+
+  for reps_total in 1:final_reps_total
+    mean_obj += result["$reps_total"]["objective"]   # cost per prediction horizon duration (e.g. 24h = 1 day)
+  end
+  mean_obj = mean_obj/(final_reps_total*prediction_horizon) # cost per hour
+  return mean_obj
+end 
 
 # Select your favorite solver
 solver = JuMP.optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0)
-
 
 # Select the TYNDP version to be used:
 tyndp_version = "2020"
@@ -25,8 +36,8 @@ if tyndp_version == "2020"
   climate_year = "2007"
 
 elseif tyndp_version == "2024"
-  scenario = "DE"
-  year = "2040"
+  scenario = "GA"
+  year = "2030"
   climate_year = "2009"
 end
 
@@ -44,7 +55,6 @@ elseif tyndp_version == "2024"
 end
 
 input_data, nodal_data = _EUGO.construct_data_dictionary(tyndp_version, ntcs, arcs, capacity, nodes, demand, scenario_id, climate_year, gen_types, pv, wind_onshore, wind_offshore, gen_costs, emission_factor, inertia_constants, node_positions)
-
 
 # Select Dynamic Cable Rating parameters
 Tmax = 90                                                 # [degC], Temperature limit of the cables 
@@ -67,7 +77,7 @@ dcr_data = Dict{String, Any}(
   "temp_to_pow_ratio" => temp_to_pow_ratio,
   "constraint_relax_factor" => constraint_relax_factor,
   "T_amb" => T_amb
-  )
+)
 
 # Select the temporal sampling method and parameters
 sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
@@ -75,60 +85,73 @@ number_of_clusters = 2
 days_per_cluster = 2
 rep_days = collect(1:10:365)
 
-# Define capacities of branches in offshore grid in p.u. with base value 100 MVA
-cable_capacity = 20
-converter_capacity = 50     
-
-# Include necessary scripts for functions, initializations and other operations
-include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
 include("../src/dynamic_cable_rating/temporal_sampling.jl")
-
-# Modify the input_data dictionary to add the offshore grid and extract the cable_id vector
-cable_id = create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity, tyndp_version)
-
-# Make copy of input data dictionary as RES and demand data updated for each hour (and also include the created offhsore grid)
-input_data_raw = deepcopy(input_data)
 
 # Perform the temporal sampling based on the selected option
 # Note: The temporal sampling function works only for number_of_hours = 8760.
 if sampling_type_flag == "rep_days"
-  number_of_clusters = length(rep_days)
-  t, repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, rep_days, nothing)
-elseif sampling_type_flag =="clusters"
-  t, repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, number_of_clusters, days_per_cluster)
+    number_of_clusters = length(rep_days)
+    t, repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, rep_days, nothing)
+  elseif sampling_type_flag =="clusters"
+    t, repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, number_of_clusters, days_per_cluster)
+  end
+
+# Define capacities of branches in offshore grid in p.u. with base value 100 MVA
+examined_cables = [10, 15, 20]
+examined_conv_ratio = [2, 2.5, 3]
+     
+
+# Initialize results DataFrame
+results_df = _DF.DataFrame(
+    cable_capacity = Float64[],
+    converter_capacity = Float64[],
+    economic_benefit_eur = Float64[],
+    economic_benefit_perc = Float64[],
+    result_values = Float64[],
+    result_ref_values = Float64[],
+)
+
+for cable_capacity in examined_cables
+    for ratio in examined_conv_ratio
+        converter_capacity = cable_capacity * ratio
+        # Include necessary scripts for functions, initializations and other operations
+        include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
+
+        # Modify the input_data dictionary to add the offshore grid and extract the cable_id vector
+        cable_id = create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity, tyndp_version)
+
+        # Make copy of input data dictionary as RES and demand data updated for each hour (and also include the created offhsore grid)
+        input_data_raw = deepcopy(input_data)
+
+        include("simulate_case.jl")
+    
+        # Run the dynamic case
+        result = simulate_case!(input_data, nodal_data, solver, prediction_horizon, number_of_clusters, repetitions, cable_id, dcr_data)
+        
+        # Select no cables with DCR to simulate the reference case (DCR OFF)
+        cable_id = []
+        
+        # Run the reference case
+        result_ref = simulate_case!(input_data_raw, nodal_data, solver, prediction_horizon, number_of_clusters, repetitions, cable_id, dcr_data)
+        
+        # Calculate mean objective function per hour
+        cost_ref = calculate_mean_obj(result_ref,final_reps_total, prediction_horizon)
+        cost_dcr = calculate_mean_obj(result,final_reps_total, prediction_horizon)
+        
+        # Calculate economic benefits
+        economic_benefit = cost_ref - cost_dcr
+        economic_benefit_in_perc = (economic_benefit/cost_ref)*100
+
+        # Save the results
+        push!(results_df, (
+            cable_capacity, converter_capacity,
+            economic_benefit, economic_benefit_in_perc, cost_dcr, cost_ref
+        ))
+
+    end
+
 end
 
-# Calculate the total number of repetitions to cover the whole simulation horizon 
-final_reps_total = number_of_clusters*length(repetitions[1])
 
-include("simulate_case.jl")
-
-# Run the dynamic case
-result = simulate_case!(input_data, nodal_data, solver, prediction_horizon, number_of_clusters, repetitions, cable_id, dcr_data)
-
-# Select no cables with DCR to simulate the reference case (DCR OFF)
-cable_id = []
-
-# Run the reference case
-result_ref = simulate_case!(input_data_raw, nodal_data, solver, prediction_horizon, number_of_clusters, repetitions, cable_id, dcr_data)
-
-#Function to calculate the economic benefit
-function calculate_mean_obj(result,final_reps_total, prediction_horizon)
-    mean_obj = 0
-
-    for reps_total in 1:final_reps_total
-            mean_obj += result["$reps_total"]["objective"]   # cost per prediction horizon duration (e.g. 24h = 1 day)
-    end
-    mean_obj = mean_obj/(final_reps_total*prediction_horizon) # cost per hour
-    return mean_obj
-end 
-
-cost_ref = calculate_mean_obj(result_ref,final_reps_total, prediction_horizon)
-cost_dcr = calculate_mean_obj(result,final_reps_total, prediction_horizon)
-
-economic_benefit = cost_ref - cost_dcr
-economic_benefit_in_perc = (economic_benefit/cost_ref)*100
-
-println("The economic benefit of DCR is: $economic_benefit EUR/h")
-println("The economic benefit of DCR is: $economic_benefit_in_perc %")
-
+# Save results
+CSV.write("sensitivity_grid_par_results.csv", results_df)

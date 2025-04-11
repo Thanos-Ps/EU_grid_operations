@@ -80,6 +80,7 @@ time_elapsed = 3600                                       # [s], Time step of th
 time_constant = 100000                                    # [s], Thermal time constant of the cables   
 temp_to_pow_ratio = 0.9                                   # [degC/%], parameter of the thermal model
 constraint_relax_factor = 10                              # [-], Factor to relax the constraints for the power limit of the dcr cables
+T_amb = 18                                                # [degC], Ambient temperature of the cables (the subsea temperature)
 
 # Create a dictionary that contains the DCR parameters
 dcr_data = Dict{String, Any}(
@@ -89,13 +90,14 @@ dcr_data = Dict{String, Any}(
   "time_elapsed" => time_elapsed, 
   "time_constant" => time_constant, 
   "temp_to_pow_ratio" => temp_to_pow_ratio,
-  "constraint_relax_factor" => constraint_relax_factor
+  "constraint_relax_factor" => constraint_relax_factor,
+  "T_amb" => T_amb
   )
 
 # Select the temporal sampling method and parameters
 sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
-number_of_clusters = 3
-days_per_cluster = 1
+number_of_clusters = 12
+days_per_cluster = 3
 rep_days = collect(1:10:365)
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
@@ -108,6 +110,7 @@ include("../src/dynamic_cable_rating/temporal_sampling.jl")
 
 # Modify the input_data dictionary to add the offshore grid and extract the cable_id vector
 cable_id = create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity, tyndp_version)
+#cable_id = [] 
 
 # Make copy of input data dictionary as RES and demand data updated for each hour (and also include the created offhsore grid)
 input_data_raw = deepcopy(input_data)
@@ -116,9 +119,9 @@ input_data_raw = deepcopy(input_data)
 # Note: The temporal sampling function works only for number_of_hours = 8760.
 if sampling_type_flag == "rep_days"
   number_of_clusters = length(rep_days)
-  t, repetitions = temporal_sampling!(sampling_type_flag, rep_days, nothing)
+  t, repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, rep_days, nothing)
 elseif sampling_type_flag =="clusters"
-  t, repetitions = temporal_sampling!(sampling_type_flag, number_of_clusters, days_per_cluster)
+  t, repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, number_of_clusters, days_per_cluster)
 end
 
 

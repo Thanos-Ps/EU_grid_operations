@@ -1,7 +1,6 @@
-function simulate_case!(input_data, nodal_data, solver, Tmax, T0, prediction_horizon, number_of_clusters, repetitions, cable_id)
+function simulate_case!(input_data, nodal_data, solver, prediction_horizon, number_of_clusters, repetitions, cable_id, dcr_data)
     
     result = Dict{String, Any}("$reps_total" => nothing for reps_total in 1:length(repetitions)*length(repetitions[1]))
-
 
     # Initialize variables as arrays to avoid declaring global variables inside the loops
     # Note: To access or update those variables inside the loop they should be called as reps[1] etc.

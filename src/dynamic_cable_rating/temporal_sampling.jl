@@ -4,7 +4,7 @@
 # For "clusters" sampling: par1 = number_of_clusters, par2 = days_per_cluster
 # For "rep_days" sampling: par1 = rep_days (array), par2 : not used
 
-function temporal_sampling!(sampling_type_flag, par1, par2)
+function temporal_sampling!(sampling_type_flag, prediction_horizon, par1, par2)
 
     if sampling_type_flag == "clusters"
         # Divide the year to N number of clusters.
