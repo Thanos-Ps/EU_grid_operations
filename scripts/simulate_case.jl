@@ -31,7 +31,7 @@ function simulate_case!(input_data, nodal_data, solver, prediction_horizon, numb
             _EUGO.prepare_hourly_data!(mn_data["nw"]["$network_hour"], nodal_data, hour[1])
             end
             # Solve the DCR-OPF problem for the given prediction horizon (simultaneously)
-            result["$(reps_total[1])"] = DCROPF.solve_dcropf(mn_data, PowerModels.NFAPowerModel, solver, cable_id, dcr_data, result, reps[1], reps_total[1], prediction_horizon)
+            result["$(reps_total[1])"] = DCROPF.solve_dcropf(mn_data, PowerModels.NFAPowerModel, solver, cable_id, dcr_data, result, reps[1], reps_total[1], prediction_horizon, i)
         
         end
 

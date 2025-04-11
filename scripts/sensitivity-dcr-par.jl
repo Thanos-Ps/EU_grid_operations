@@ -12,6 +12,7 @@ using Plots
 
 # Select sentitivity analysis flag: 
 # Options: "T0", "prediction_horizon", "time_constant", "temp_to_pow_ratio", "T_amb"
+# "T_amb" doesn't work anymore: After temperature array generation -> DCROPF is updated.
 sensitivity_flag = "temp_to_pow_ratio"
 
 # Function to calculate the economic benefit
@@ -24,6 +25,27 @@ function calculate_mean_obj(result,final_reps_total, prediction_horizon)
   mean_obj = mean_obj/(final_reps_total*prediction_horizon) # cost per hour
   return mean_obj
 end 
+
+function generate_temperature_array()
+  # Total hours in a year
+  total_hours = 8760
+  # Days in a year (1 to 365)
+  days = 1:365
+  # Daily temperature values using a cosine function
+  amplitude = 5.0
+  vertical_shift = 13.0
+  peak_day = 258  # Mid-September (day 258)
+  T_day = amplitude .* cos.(2π/365 .* (days .- peak_day)) .+ vertical_shift
+  # Expand daily values to hourly (repeat each value 24 times)
+  T_hourly = repeat(T_day, inner=24)
+  # Ensure the length matches 8760 hours
+  @assert length(T_hourly) == total_hours
+  return T_hourly
+end
+
+# Generate the temperature array
+temperature_array = generate_temperature_array()
+
 
 # Select your favorite solver
 solver = JuMP.optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0)
@@ -105,8 +127,8 @@ if sensitivity_flag == "T_amb"
 
     # Select the temporal sampling method and parameters
     sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
-    number_of_clusters = 12
-    days_per_cluster = 3
+    number_of_clusters = 2
+    days_per_cluster = 2
     rep_days = collect(1:10:365)
 
     # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
@@ -188,7 +210,7 @@ elseif sensitivity_flag == "time_constant"
     "time_constant" => time_constant, 
     "temp_to_pow_ratio" => temp_to_pow_ratio,
     "constraint_relax_factor" => constraint_relax_factor,
-    "T_amb" => T_amb
+    "temperature_array" => temperature_array
     )
 
     # Select the temporal sampling method and parameters
@@ -277,7 +299,7 @@ elseif sensitivity_flag == "temp_to_pow_ratio"
     "time_constant" => time_constant, 
     "temp_to_pow_ratio" => temp_to_pow_ratio,
     "constraint_relax_factor" => constraint_relax_factor,
-    "T_amb" => T_amb
+    "temperature_array" => temperature_array
     )
 
     # Select the temporal sampling method and parameters
