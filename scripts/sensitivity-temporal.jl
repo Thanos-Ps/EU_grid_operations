@@ -10,10 +10,6 @@ using EU_grid_operations; const _EUGO = EU_grid_operations
 using DCROPF
 using Plots
 
-# Select sentitivity analysis flag: 
-# Options: "T0", "prediction_horizon", "time_constant", "temp_to_pow_ratio", "T_amb"
-# "T_amb" doesn't work anymore: After temperature array generation -> DCROPF is updated.
-sensitivity_flag = "temp_to_pow_ratio"
 
 # Function to calculate the economic benefit
 function calculate_mean_obj(result,final_reps_total, prediction_horizon)
@@ -45,7 +41,8 @@ end
 
 # Generate the temperature array
 temperature_array = generate_temperature_array()
-
+#T_amb = 8
+#temperature_array = T_amb*ones(8760) 
 
 # Select your favorite solver
 solver = JuMP.optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0)

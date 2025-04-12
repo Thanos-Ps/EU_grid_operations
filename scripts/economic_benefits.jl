@@ -28,7 +28,8 @@ end
 
 # Generate the temperature array
 temperature_array = generate_temperature_array()
-
+#T_amb = 18
+#temperature_array = T_amb*ones(8760)
 # Optional: Visualize the first week (24*7 = 168 hours)
 #plot(temperature_array, xlabel="Hour", ylabel="Temperature (°C)", label="Hourly Temperature")
 
@@ -98,7 +99,7 @@ number_of_clusters = 1
 days_per_cluster = 30
 #rep_days = collect(1:10:365)
 rep_days = 1
-initial_day = 70
+initial_day = 75
 period_duration_days = 30
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA

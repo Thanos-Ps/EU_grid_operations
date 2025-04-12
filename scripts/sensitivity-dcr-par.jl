@@ -12,8 +12,7 @@ using Plots
 
 # Select sentitivity analysis flag: 
 # Options: "T0", "prediction_horizon", "time_constant", "temp_to_pow_ratio", "T_amb"
-# "T_amb" doesn't work anymore: After temperature array generation -> DCROPF is updated.
-sensitivity_flag = "temp_to_pow_ratio"
+sensitivity_flag = "T_amb"
 
 # Function to calculate the economic benefit
 function calculate_mean_obj(result,final_reps_total, prediction_horizon)
@@ -106,6 +105,8 @@ if sensitivity_flag == "T_amb"
 
   for T_amb in examined_T_amb
 
+    temperature_array = T_amb*ones(8760)
+
     # Select fixed DCR parameters
     T0 = examined_T0[3]                                                   
     prediction_horizon = examined_prediction_horizon[1]                                  
@@ -122,13 +123,13 @@ if sensitivity_flag == "T_amb"
     "time_constant" => time_constant, 
     "temp_to_pow_ratio" => temp_to_pow_ratio,
     "constraint_relax_factor" => constraint_relax_factor,
-    "T_amb" => T_amb
+    "temperature_array" => temperature_array
     )
 
     # Select the temporal sampling method and parameters
     sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
-    number_of_clusters = 2
-    days_per_cluster = 2
+    number_of_clusters = 12
+    days_per_cluster = 3
     rep_days = collect(1:10:365)
 
     # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
