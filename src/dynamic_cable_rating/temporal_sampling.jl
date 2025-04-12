@@ -50,8 +50,30 @@ function temporal_sampling!(sampling_type_flag, prediction_horizon, par1, par2)
         push!(repetitions,collect(t[i][1]:prediction_horizon:t[i][end]))    # could use append! instead??
         end
 
+    
+
+    elseif sampling_type_flag == "period"
+
+        # Parse parameters
+        initial_day = par1
+        period_duration_days = par2
+        
+        # Convert days to hourly indices (1-based)
+        start_hour = (initial_day - 1) * 24 + 1
+        end_hour = start_hour + period_duration_days * 24 - 1
+        
+        # Ensure period stays within year bounds
+        end_hour = min(end_hour, number_of_hours)
+        
+        # Create time array with single cluster/period
+        t = [collect(start_hour:end_hour)]
+        
+        # Generate repetition points within the period
+        reps_start = start_hour:prediction_horizon:end_hour
+        repetitions = [collect(reps_start)]
+
+
     end
 
     return t, repetitions
-
 end

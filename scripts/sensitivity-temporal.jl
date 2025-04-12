@@ -107,41 +107,18 @@ dcr_data = Dict{String, Any}(
 
 
 # Select the temporal sampling method and parameters
-sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
-number_of_clusters = 4  #here they represent number of cases 
-days_per_cluster = 10
+sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days" "or "period"
+number_of_cases = 4  #here they represent number of clusters 
+days_per_cluster = 20
 #rep_days = collect(1:10:365)
-
+initial_day = 1
+period_duration_days = 30
 include("../src/dynamic_cable_rating/temporal_sampling.jl")
 
 
 # Perform the temporal sampling based on the selected option
 # Note: The temporal sampling function works only for number_of_hours = 8760.
-if sampling_type_flag == "rep_days"
-    number_of_clusters = length(rep_days)
-    t, repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, rep_days, nothing)
-elseif sampling_type_flag =="clusters"
-    t, repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, number_of_clusters, days_per_cluster)
-end
-  
-# Calculate the total number of repetitions to cover the whole simulation horizon 
-final_reps_total = number_of_clusters*length(repetitions[1])
-
-# Calculate cluster assignments (example: simple equal division)
-days_in_year = div(number_of_hours, 24)
-cluster_size = div(days_in_year, number_of_clusters)
-
- # Create cluster-day mapping: each cluster contains its actual days
- cluster_days = [Int[] for _ in 1:number_of_clusters]
- for day in 1:days_in_year
-     cluster = min(div(day-1, cluster_size) + 1, number_of_clusters)
-     push!(cluster_days[cluster], day)
- end
-
- all_rep_days = zeros(Int, days_per_cluster, number_of_clusters)
- for i in 1:number_of_clusters
-     all_rep_days[:,i] = cluster_days[i][1:days_per_cluster]
- end
+all_t, all_repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, number_of_cases, days_per_cluster)
 
 
 #Initialize lists to store results
@@ -150,65 +127,85 @@ result_ref_values = []
 economic_benefit_values = []
 economic_benefit_in_perc_values = []
 
+"""
+# Define the first day for the "period" sampling method
+number_of_cases = 4  #represent the number_of_clusters
+period_duration_days = 10 # represent the days_per_cluster
+sampling_type_flag = "clusters"
+
+include("../src/dynamic_cable_rating/temporal_sampling.jl")
+
+all_t, all_repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, number_of_cases, period_duration_days)
+"""
+
 
 # Start sensitivity analysis
-for case in 1:number_of_clusters
-
-    # Select the case to be simulated
-    rep_days = all_rep_days[:,case]
-    number_of_clusters = length(rep_days)
-    sampling_type_flag = "rep_days"                           
-    t, repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, rep_days, nothing)
-
-    # Calculate the total number of repetitions to cover the whole simulation horizon 
-    final_reps_total = number_of_clusters*length(repetitions[1])
-
-    # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
-    cable_capacity = 20
-    converter_capacity = 50     
-
-    # Include necessary scripts for functions, initializations and other operations
-    include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
-
-    # Modify the input_data dictionary to add the offshore grid and extract the cable_id vector
-    cable_id = create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity, tyndp_version)
-
-    # Make copy of input data dictionary as RES and demand data updated for each hour (and also include the created offhsore grid)
-    input_data_raw = deepcopy(input_data)
-
-    include("simulate_case.jl")
-
-    # Run the dynamic case
-    result = simulate_case!(input_data, nodal_data, solver, prediction_horizon, number_of_clusters, repetitions, cable_id, dcr_data)
-
-    # Select no cables with DCR to simulate the reference case (DCR OFF)
-    cable_id = []
-
-    # Run the reference case
-    result_ref = simulate_case!(input_data_raw, nodal_data, solver, prediction_horizon, number_of_clusters, repetitions, cable_id, dcr_data)
-
-   # Calculate mean objective function per hour
-   cost_ref = calculate_mean_obj(result_ref,final_reps_total, prediction_horizon)
-   cost_dcr = calculate_mean_obj(result,final_reps_total, prediction_horizon)
-   
-   # Calculate economic benefits
-   economic_benefit = cost_ref - cost_dcr
-   economic_benefit_in_perc = (economic_benefit/cost_ref)*100
-
-   # Store results
-   push!(result_values, cost_dcr)
-   push!(result_ref_values, cost_ref)
-   push!(economic_benefit_values, economic_benefit)
-   push!(economic_benefit_in_perc_values,economic_benefit_in_perc)
+for case in 1:number_of_cases
 
 
-    # Plot results
-    plt = plot([1:number_of_clusters], economic_benefit_in_perc_values, xlabel="Season [-]", ylabel = "Average Economic Benefit per Hour [%]",
-    legend = false, title = "Effect of seasons", size=(800, 600), linewidth=2, xlabelfontsize=14,   # Bigger x-axis label font
-    ylabelfontsize=14,   # Bigger y-axis label font
-    titlefontsize=18,    # Bigger title font
-    tickfontsize=12,
-    legendfontsize = 12)     # Bigger tick labels )
+  t = [all_t[case]]
+  repetitions = [all_repetitions[case]]
+  number_of_clusters = 1
+
+  """
+  # Select the temporal sampling method and parameters
+  sampling_type_flag = "period"                           # Options: "clusters" or "rep_days"  or "period"
+  number_of_clusters = 1
+  initial_day = floor(Int64,(all_repetitions[case][1] - 1)/24) + 1      # transform the hourly index to day index
+  
+  # Perform the temporal sampling based on the selected option
+  t, repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, initial_day, period_duration_days)
+  """
+
+  # Calculate the total number of repetitions to cover the whole simulation horizon 
+  final_reps_total = number_of_clusters*length(repetitions[1])
+
+  # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
+  cable_capacity = 20
+  converter_capacity = 50     
+
+  # Include necessary scripts for functions, initializations and other operations
+  include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
+
+  # Modify the input_data dictionary to add the offshore grid and extract the cable_id vector
+  cable_id = create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity, tyndp_version)
+
+  # Make copy of input data dictionary as RES and demand data updated for each hour (and also include the created offhsore grid)
+  input_data_raw = deepcopy(input_data)
+
+  include("simulate_case.jl")
+
+  # Run the dynamic case
+  result = simulate_case!(input_data, nodal_data, solver, prediction_horizon, number_of_clusters, repetitions, cable_id, dcr_data)
+
+  # Select no cables with DCR to simulate the reference case (DCR OFF)
+  cable_id = []
+
+  # Run the reference case
+  result_ref = simulate_case!(input_data_raw, nodal_data, solver, prediction_horizon, number_of_clusters, repetitions, cable_id, dcr_data)
+
+  # Calculate mean objective function per hour
+  cost_ref = calculate_mean_obj(result_ref,final_reps_total, prediction_horizon)
+  cost_dcr = calculate_mean_obj(result,final_reps_total, prediction_horizon)
+  
+  # Calculate economic benefits
+  economic_benefit = cost_ref - cost_dcr
+  economic_benefit_in_perc = (economic_benefit/cost_ref)*100
+
+  # Store results
+  push!(result_values, cost_dcr)
+  push!(result_ref_values, cost_ref)
+  push!(economic_benefit_values, economic_benefit)
+  push!(economic_benefit_in_perc_values,economic_benefit_in_perc)
+
+
+  # Plot results
+  plt = plot([1:number_of_cases], economic_benefit_in_perc_values, xlabel="Season [-]", ylabel = "Average Economic Benefit per Hour [%]",
+  legend = false, title = "Effect of seasons", size=(800, 600), linewidth=2, xlabelfontsize=14,   # Bigger x-axis label font
+  ylabelfontsize=14,   # Bigger y-axis label font
+  titlefontsize=18,    # Bigger title font
+  tickfontsize=12,
+  legendfontsize = 12)     # Bigger tick labels )
 
 end
 

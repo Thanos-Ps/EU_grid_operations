@@ -93,11 +93,13 @@ dcr_data = Dict{String, Any}(
   )
 
 # Select the temporal sampling method and parameters
-sampling_type_flag = "rep_days"                           # Options: "clusters" or "rep_days"
-number_of_clusters = 2
-days_per_cluster = 2
+sampling_type_flag = "period"                           # Options: "clusters" or "rep_days"  or "period"
+number_of_clusters = 1
+days_per_cluster = 30
 #rep_days = collect(1:10:365)
 rep_days = 1
+initial_day = 70
+period_duration_days = 30
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
 cable_capacity = 20
@@ -120,6 +122,9 @@ if sampling_type_flag == "rep_days"
   t, repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, rep_days, nothing)
 elseif sampling_type_flag =="clusters"
   t, repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, number_of_clusters, days_per_cluster)
+elseif sampling_type_flag == "period"
+  number_of_clusters = 1
+  t, repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, initial_day, period_duration_days)
 end
 
 # Calculate the total number of repetitions to cover the whole simulation horizon 
