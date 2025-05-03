@@ -54,7 +54,7 @@ climate_year = "2009"
 tyndp_version = "2024"
 fetch_data = true
 number_of_hours = 8760
-scenario = "NT"
+scenario = "DE"
 year = "2030"
 climate_year = "2009"
 #"""

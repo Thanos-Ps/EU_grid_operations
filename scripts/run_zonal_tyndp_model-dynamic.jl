@@ -51,8 +51,8 @@ if tyndp_version == "2020"
   climate_year = "2007"
 
 elseif tyndp_version == "2024"
-  scenario = "NT"
-  year = "2030"
+  scenario = "DE"
+  year = "2040"
   climate_year = "2009"
 end
 
