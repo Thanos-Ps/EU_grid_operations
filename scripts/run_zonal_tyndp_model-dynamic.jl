@@ -51,8 +51,8 @@ if tyndp_version == "2020"
   climate_year = "2007"
 
 elseif tyndp_version == "2024"
-  scenario = "DE"
-  year = "2050"
+  scenario = "NT"
+  year = "2030"
   climate_year = "2009"
 end
 
@@ -94,7 +94,7 @@ temperature_array = generate_temperature_array()
 # Select Dynamic Cable Rating parameters
 Tmax = 90                                                 # [degC], Temperature limit of the cables 
 T0 = 80                                                   # [degC], Initial temperature of the cables 
-prediction_horizon = 24                                   # [hours], For the optimization problem 
+prediction_horizon = 1                                   # [hours], For the optimization problem 
 time_elapsed = 3600                                       # [s], Time step of the simulation        
 time_constant = 27*3600                                    # [s], Thermal time constant of the cables   
 temp_to_pow_ratio = 0.72                                   # [degC/%], parameter of the thermal model
@@ -115,15 +115,15 @@ dcr_data = Dict{String, Any}(
 
 # Select the temporal sampling method and parameters
 sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days" or "period"
-number_of_clusters = 2
-days_per_cluster = 2
+number_of_clusters = 1
+days_per_cluster = 365
 rep_days = collect(1:10:365)
 initial_day = 1
 period_duration_days = 30
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
 cable_capacity = 10
-converter_capacity = 25      
+converter_capacity = 20      
 
 # Include necessary scripts for functions, initializations and other operations
 include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
@@ -131,7 +131,8 @@ include("../src/dynamic_cable_rating/temporal_sampling.jl")
 
 # Modify the input_data dictionary to add the offshore grid and extract the cable_id vector
 cable_id = create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity, tyndp_version)
-#cable_id = [] 
+# If you want to run the reference case (without DCR) -> set cable_id = []
+cable_id = [] 
 
 # Make copy of input data dictionary as RES and demand data updated for each hour (and also include the created offhsore grid)
 input_data_raw = deepcopy(input_data)
@@ -191,7 +192,16 @@ for j in 1:number_of_clusters
 
 end
 
-"""
+# Store all selected parameters in a dictionary
+set_of_parameters = Dict{String, Any}(
+  "dcr_data" => dcr_data,
+  "cable_capacity" => cable_capacity,
+  "converter_capacity" => converter_capacity,
+  "sampling_type_flag" => sampling_type_flag,
+  "number_of_clusters" => number_of_clusters,
+  "days_per_cluster" => days_per_cluster,
+)
+
 ## Write out JSON files
 # Result file, with hourly results
 json_string = JSON.json(result)
@@ -214,4 +224,10 @@ open(scenario_file_name,"w") do f
   JSON.print(f, json_string)
 end
 
-"""
+
+# parameters data dictionary as .json file
+parameters_file_name = joinpath(_EUGO.BASE_DIR, "results", "TYNDP"*tyndp_version, join(["parameters_zonal_tyndp_", scenario*year,"_", climate_year, ".json"]))
+json_string = JSON.json(set_of_parameters)
+open(parameters_file_name,"w") do f
+  JSON.print(f, json_string)
+end

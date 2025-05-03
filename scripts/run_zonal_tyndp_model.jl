@@ -51,12 +51,12 @@ climate_year = "2009"
 """
 # A sample set for TYNDP 2020
 #"""
-tyndp_version = "2020"
+tyndp_version = "2024"
 fetch_data = true
 number_of_hours = 8760
-scenario = "GA"
+scenario = "NT"
 year = "2030"
-climate_year = "2007"
+climate_year = "2009"
 #"""
 
 # Load grid and scenario data
