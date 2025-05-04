@@ -123,7 +123,7 @@ final_reps_total[1] = number_of_clusters*length(repetitions[1])
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
 examined_converters = [20, 22, 24, 26, 28, 30] # converter capacity in p.u. (100 MVA base)
-examined_deratings_cables = [1.5]
+examined_deratings_cables = [1.25]
      
 
 # Initialize results DataFrame
@@ -139,7 +139,7 @@ results_df = _DF.DataFrame(
 for converter_capacity in examined_converters
   for ratio in examined_deratings_cables
 
-    cable_capacity = converter_capacity / ratio
+    cable_capacity = (converter_capacity / ratio)/2
     # Include necessary scripts for functions, initializations and other operations
     include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
 
