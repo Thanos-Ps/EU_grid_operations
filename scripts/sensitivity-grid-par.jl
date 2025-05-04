@@ -137,65 +137,66 @@ results_df = _DF.DataFrame(
 )
 
 for converter_capacity in examined_converters
-    for ratio in examined_deratings_cables
-        cable_capacity = converter_capacity / ratio
-        # Include necessary scripts for functions, initializations and other operations
-        include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
+  for ratio in examined_deratings_cables
 
-        # Modify the input_data dictionary to add the offshore grid and extract the cable_id vector
-        cable_id = create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity, tyndp_version)
+    cable_capacity = converter_capacity / ratio
+    # Include necessary scripts for functions, initializations and other operations
+    include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
 
-        # Make copy of input data dictionary as RES and demand data updated for each hour (and also include the created offhsore grid)
-        input_data_raw = deepcopy(input_data)
+    # Modify the input_data dictionary to add the offshore grid and extract the cable_id vector
+    cable_id = create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity, tyndp_version)
 
-        include("simulate_case.jl")
+    # Make copy of input data dictionary as RES and demand data updated for each hour (and also include the created offhsore grid)
+    input_data_raw = deepcopy(input_data)
+
+    include("simulate_case.jl")
+
+    # Run the dynamic case
+    result = simulate_case!(input_data, nodal_data, solver, prediction_horizon, number_of_clusters, repetitions, cable_id, dcr_data)
     
-        # Run the dynamic case
-        result = simulate_case!(input_data, nodal_data, solver, prediction_horizon, number_of_clusters, repetitions, cable_id, dcr_data)
-        
-        # Select no cables with DCR to simulate the reference case (DCR OFF)
-        cable_id = []
-        
-        # Run the reference case
-        result_ref = simulate_case!(input_data_raw, nodal_data, solver, prediction_horizon, number_of_clusters, repetitions, cable_id, dcr_data)
-        
-        # Calculate mean objective function per hour
-        cost_ref = calculate_mean_obj(result_ref,final_reps_total[1], prediction_horizon)
-        cost_dcr = calculate_mean_obj(result,final_reps_total[1], prediction_horizon)
-        
-        # Calculate economic benefits
-        economic_benefit = cost_ref - cost_dcr
-        economic_benefit_in_perc = (economic_benefit/cost_ref)*100
+    # Select no cables with DCR to simulate the reference case (DCR OFF)
+    cable_id = []
+    
+    # Run the reference case
+    result_ref = simulate_case!(input_data_raw, nodal_data, solver, prediction_horizon, number_of_clusters, repetitions, cable_id, dcr_data)
+    
+    # Calculate mean objective function per hour
+    cost_ref = calculate_mean_obj(result_ref,final_reps_total[1], prediction_horizon)
+    cost_dcr = calculate_mean_obj(result,final_reps_total[1], prediction_horizon)
+    
+    # Calculate economic benefits
+    economic_benefit = cost_ref - cost_dcr
+    economic_benefit_in_perc = (economic_benefit/cost_ref)*100
 
-        # Save the results
-        push!(results_df, (
-            cable_capacity, converter_capacity,
-            economic_benefit, economic_benefit_in_perc, cost_dcr, cost_ref
-        ))
+    # Save the results
+    push!(results_df, (
+        cable_capacity, converter_capacity,
+        economic_benefit, economic_benefit_in_perc, cost_dcr, cost_ref
+    ))
 
-        ## Save result dictionary as a JSON file
-        json_string = JSON.json(result)
-        result_file_name = joinpath(_EUGO.BASE_DIR, "results", "grid_parameters-derating", join(["result_zonal_tyndp_", scenario*year,"_", climate_year,"_", converter_capacity, "_", ratio, ".json"]))
-        open(result_file_name,"w") do f
-            JSON.print(f, json_string)
-        end
-
-        ## Save result dictionary as a JSON file
-        json_string = JSON.json(result_ref)
-        result_ref_file_name = joinpath(_EUGO.BASE_DIR, "results", "grid_parameters-derating", join(["result_ref_zonal_tyndp_", scenario*year,"_", climate_year,"_", converter_capacity, "_", ratio, ".json"]))
-        open(result_ref_file_name,"w") do f
-            JSON.print(f, json_string)
-        end
-
-        
-        ## Save result dictionary as a JSON file
-        json_string = JSON.json(input_data)
-        input_data_file_name = joinpath(_EUGO.BASE_DIR, "results", "grid_parameters-derating", join(["input_data_zonal_tyndp_", scenario*year,"_", climate_year,"_", converter_capacity, "_", ratio, ".json"]))
-        open(input_data_file_name,"w") do f
-            JSON.print(f, json_string)
-        end
-
+    ## Save result dictionary as a JSON file
+    json_string = JSON.json(result)
+    result_file_name = joinpath(_EUGO.BASE_DIR, "results", "grid_parameters-derating", join(["result_zonal_tyndp_", scenario*year,"_", climate_year,"_", converter_capacity, "_", ratio, ".json"]))
+    open(result_file_name,"w") do f
+      JSON.print(f, json_string)
     end
+
+    ## Save result dictionary as a JSON file
+    json_string = JSON.json(result_ref)
+    result_ref_file_name = joinpath(_EUGO.BASE_DIR, "results", "grid_parameters-derating", join(["result_ref_zonal_tyndp_", scenario*year,"_", climate_year,"_", converter_capacity, "_", ratio, ".json"]))
+    open(result_ref_file_name,"w") do f
+      JSON.print(f, json_string)
+    end
+
+    
+    ## Save result dictionary as a JSON file
+    json_string = JSON.json(input_data)
+    input_data_file_name = joinpath(_EUGO.BASE_DIR, "results", "grid_parameters-derating", join(["input_data_zonal_tyndp_", scenario*year,"_", climate_year,"_", converter_capacity, "_", ratio, ".json"]))
+    open(input_data_file_name,"w") do f
+      JSON.print(f, json_string)
+    end
+
+  end
 
 end
 
