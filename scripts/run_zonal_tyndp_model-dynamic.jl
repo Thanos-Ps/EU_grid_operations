@@ -94,7 +94,7 @@ temperature_array = generate_temperature_array()
 # Select Dynamic Cable Rating parameters
 Tmax = 90                                                 # [degC], Temperature limit of the cables 
 T0 = 80                                                   # [degC], Initial temperature of the cables 
-prediction_horizon = 1                                   # [hours], For the optimization problem 
+prediction_horizon = 24*7                                   # [hours], For the optimization problem 
 time_elapsed = 3600                                       # [s], Time step of the simulation        
 time_constant = 27*3600                                    # [s], Thermal time constant of the cables   
 temp_to_pow_ratio = 0.72                                   # [degC/%], parameter of the thermal model
@@ -115,15 +115,15 @@ dcr_data = Dict{String, Any}(
 
 # Select the temporal sampling method and parameters
 sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days" or "period"
-number_of_clusters = 1
-days_per_cluster = 365
+number_of_clusters = 3
+days_per_cluster = 7
 rep_days = collect(1:10:365)
 initial_day = 1
 period_duration_days = 30
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
 cable_capacity = 10
-converter_capacity = 20      
+converter_capacity = 25      
 
 # Include necessary scripts for functions, initializations and other operations
 include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
@@ -132,7 +132,7 @@ include("../src/dynamic_cable_rating/temporal_sampling.jl")
 # Modify the input_data dictionary to add the offshore grid and extract the cable_id vector
 cable_id = create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity, tyndp_version)
 # If you want to run the reference case (without DCR) -> set cable_id = []
-cable_id = [] 
+#cable_id = [] 
 
 # Make copy of input data dictionary as RES and demand data updated for each hour (and also include the created offhsore grid)
 input_data_raw = deepcopy(input_data)

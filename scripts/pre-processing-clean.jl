@@ -27,7 +27,7 @@ function determine_hours_of_ens!(result, input_data)
             end
         end
         # Mark the hour as load shed if any ENS generator produced power.
-        load_shedded_hours[hour] = num_of_gens_ens[hour] > 0
+        load_shedded_hours[hour] = num_of_gens_ens[hour] > 0   # Output: true or false
     end
 
     return num_of_gens_ens, loc_gens_ens, gens_ens, list_gens_ens_loc, ids_gens_ens, load_shedded_hours
@@ -76,7 +76,7 @@ function determine_hours_of_ens!(result, input_data, number_of_clusters, repetit
                 end
 
                 # Mark the hour as load shed if any ENS generator produced power.
-                load_shedded_hours[hour[1]] = num_of_gens_ens[hour[1]] > 0
+                load_shedded_hours[hour[1]] = num_of_gens_ens[hour[1]] > 0      # Output: true or false
             end
         end
     end
@@ -85,5 +85,6 @@ function determine_hours_of_ens!(result, input_data, number_of_clusters, repetit
 end
 
 ### Get result ####
-num_of_gens_ens, loc_gens_ens, gens_ens, list_gens_ens_loc, ids_gens_ens, load_shedded_hours = determine_hours_of_ens!(result, input_data, number_of_clusters, repetitions, prediction_horizon)
+#num_of_gens_ens, loc_gens_ens, gens_ens, list_gens_ens_loc, ids_gens_ens, load_shedded_hours = determine_hours_of_ens!(result, input_data, number_of_clusters, repetitions, prediction_horizon)
+num_of_gens_ens, loc_gens_ens, gens_ens, list_gens_ens_loc, ids_gens_ens, load_shedded_hours = determine_hours_of_ens!(result, input_data)
 count(load_shedded_hours)

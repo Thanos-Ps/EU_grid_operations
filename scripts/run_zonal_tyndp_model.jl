@@ -55,7 +55,7 @@ tyndp_version = "2024"
 fetch_data = true
 number_of_hours = 8760
 scenario = "DE"
-year = "2030"
+year = "2050"
 climate_year = "2009"
 #"""
 
@@ -64,9 +64,15 @@ if fetch_data == true
     pv, wind_onshore, wind_offshore = _EUGO.load_res_data()
     ntcs, nodes, arcs, capacity, demand, gen_types, gen_costs, emission_factor, inertia_constants, node_positions = _EUGO.get_grid_data(tyndp_version, scenario, year, climate_year)
 end
+# Construct input data dictionary in PowerModels style 
+if tyndp_version == "2020"
+  scenario_id = "$scenario$year"
+elseif tyndp_version == "2024"
+  scenario_id = "scenario"
+end
 
 # Construct input data dictionary in PowerModels style 
-input_data, nodal_data = _EUGO.construct_data_dictionary(tyndp_version, ntcs, arcs, capacity, nodes, demand, scenario, climate_year, gen_types, pv, wind_onshore, wind_offshore, gen_costs, emission_factor, inertia_constants, node_positions)
+input_data, nodal_data = _EUGO.construct_data_dictionary(tyndp_version, ntcs, arcs, capacity, nodes, demand, scenario_id, climate_year, gen_types, pv, wind_onshore, wind_offshore, gen_costs, emission_factor, inertia_constants, node_positions)
 
 # Make copy of input data dictionary as RES and demand data updated for each hour
 input_data_raw = deepcopy(input_data)

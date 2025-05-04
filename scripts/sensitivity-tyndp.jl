@@ -48,34 +48,46 @@ solver = JuMP.optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0)
 # Define sensitivity cases to analyze
 sensitivity_cases = [
     Dict(
-        :tyndp_version => "2020",
+        :tyndp_version => "2024",
         :scenario => "NT",
-        :year => "2025",
-        :climate_year => "2007"
+        :year => "2030",
+        :climate_year => "2009"
     ),
     Dict(
-        :tyndp_version => "2020",
+        :tyndp_version => "2024",
         :scenario => "GA",
         :year => "2030",
-        :climate_year => "2007"
+        :climate_year => "2009"
     ),
     Dict(
-        :tyndp_version => "2020",
+        :tyndp_version => "2024",
         :scenario => "DE",
         :year => "2030",
-        :climate_year => "2007"
+        :climate_year => "2009"
     ),
     Dict(
-        :tyndp_version => "2020",
+        :tyndp_version => "2024",
         :scenario => "GA",
         :year => "2040",
-        :climate_year => "2007"
+        :climate_year => "2009"
     ),
     Dict(
-        :tyndp_version => "2020",
+        :tyndp_version => "2024",
         :scenario => "DE",
         :year => "2040",
-        :climate_year => "2007"
+        :climate_year => "2009"
+    ),
+    Dict(
+        :tyndp_version => "2024",
+        :scenario => "GA",
+        :year => "2050",
+        :climate_year => "2009"
+    ),
+    Dict(
+        :tyndp_version => "2024",
+        :scenario => "DE",
+        :year => "2050",
+        :climate_year => "2009"
     )
 ]
 
@@ -120,7 +132,7 @@ for case in sensitivity_cases
     # Select Dynamic Cable Rating parameters
     Tmax = 90                                                 # [degC], Temperature limit of the cables 
     T0 = 80                                                   # [degC], Initial temperature of the cables 
-    prediction_horizon = 24                                   # [hours], For the optimization problem 
+    prediction_horizon = 24*7                                   # [hours], For the optimization problem 
     time_elapsed = 3600                                       # [s], Time step of the simulation        
     time_constant = 27*3600                                    # [s], Thermal time constant of the cables   
     #temp_to_pow_ratio = 0.9                                   #[degC/%], parameter of the thermal model
@@ -142,8 +154,8 @@ for case in sensitivity_cases
 
     # Select the temporal sampling method and parameters
     sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
-    number_of_clusters = 2
-    days_per_cluster = 2
+    number_of_clusters = 12
+    days_per_cluster = 7
     rep_days = collect(1:10:365)
 
     # Define capacities of branches in offshore grid in p.u. with base value 100 MVA

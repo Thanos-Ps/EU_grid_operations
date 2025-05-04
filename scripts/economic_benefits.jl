@@ -39,7 +39,7 @@ solver = JuMP.optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0)
 
 
 # Select the TYNDP version to be used:
-tyndp_version = "2020"
+tyndp_version = "2024"
 fetch_data = true
 number_of_hours = 8760
 
@@ -94,17 +94,17 @@ dcr_data = Dict{String, Any}(
   )
 
 # Select the temporal sampling method and parameters
-sampling_type_flag = "period"                           # Options: "clusters" or "rep_days"  or "period"
-number_of_clusters = 1
-days_per_cluster = 30
+sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"  or "period"
+number_of_clusters = 24
+days_per_cluster = 3
 #rep_days = collect(1:10:365)
 rep_days = 1
 initial_day = 75
 period_duration_days = 30
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
-cable_capacity = 20
-converter_capacity = 50     
+cable_capacity = 10
+converter_capacity = 25     
 
 # Include necessary scripts for functions, initializations and other operations
 include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")

@@ -1,7 +1,7 @@
 using Plots
 
 # Due to the temporal sampling, only 1 time slice (cluster) will be plotted (at least for now), to ensure continuity of time.
-selected_cluster = 1
+selected_cluster = 2
 selected_cable = cable_id[1]
 temperature_values = []
 power_values = []
@@ -77,10 +77,23 @@ println(prob_hours)
 println("\n")
 println(length(prob_hours))
 
-p1 = plot(hours, power_values, xlabel="Hour", ylabel="Rating [%]", title="Loading of Cable $selected_cable", legend = false)
+p1 = plot(hours, power_values,
+        lw = 2, c =:black, xlabel="Time [Hour]", ylabel="Rating [%]",
+        #title="Loading of Cable $selected_cable", 
+        legend = false, 
+        grid = false, framestyle=:box, 
+        tickfont=font(10),
+        guidefont=font(12, "Times"), 
+        titlefont=font(14, "Times"),
+        dpi=300, size=(600,400)
+        )
+        
+# Create the load duration curve plot
+
+
 #p1 = plot!(hours, abs_power_values, xlabel="Hour", ylabel="Rating [%]", title="Loading of Cable $selected_cable", legend = false)
 #p2 = plot(hours, abs_power_values, xlabel="Hour", ylabel="Rating [%]", title="Abs Power of Cable $selected_cable", legend = false)
-p3 = plot(hours, temperature_values, xlabel="Hour", ylabel="[degC]", title="Temperature of Cable $selected_cable", legend = false)
+p3 = plot(hours, temperature_values, xlabel="Time [Hour]", ylabel="Temperature [°C]", title="Temperature of Cable $selected_cable", legend = false)
 #p4 = plot(hours, diff_values, xlabel="Hour", title="P_f - (P_f_pos - P_f_neg)", legend = false)
 plot(p1, p3, layout =(2,1))
 
