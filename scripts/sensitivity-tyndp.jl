@@ -207,6 +207,27 @@ for case in sensitivity_cases
         economic_benefit, economic_benefit_in_perc, cost_dcr, cost_ref
     ))
 
+    ## Save result dictionary as a JSON file
+    json_string = JSON.json(result)
+    result_file_name = joinpath(_EUGO.BASE_DIR, "results", "TYNDP"*tyndp_version, join(["result_zonal_tyndp_", scenario*year,"_", climate_year, ".json"]))
+    open(result_file_name,"w") do f
+        JSON.print(f, json_string)
+    end
+
+    ## Save result_ref dictionary as a JSON file
+    json_string = JSON.json(result_ref)
+    result_ref_file_name = joinpath(_EUGO.BASE_DIR, "results", "TYNDP"*tyndp_version, join(["result_ref_zonal_tyndp_", scenario*year,"_", climate_year, ".json"]))
+    open(result_ref_file_name,"w") do f
+        JSON.print(f, json_string)
+    end
+
+    ## Save input_data dictionary as a JSON file
+    json_string = JSON.json(input_data)
+    input_data_file_name = joinpath(_EUGO.BASE_DIR, "results", "TYNDP"*tyndp_version, join(["input_data_zonal_tyndp_", scenario*year,"_", climate_year, ".json"]))
+    open(input_data_file_name,"w") do f
+        JSON.print(f, json_string)
+    end
+
 end
 
 

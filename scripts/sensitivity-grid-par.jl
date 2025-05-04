@@ -47,7 +47,7 @@ temperature_array = generate_temperature_array()
 solver = JuMP.optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0)
 
 # Select the TYNDP version to be used:
-tyndp_version = "2020"
+tyndp_version = "2024"
 fetch_data = true
 number_of_hours = 8760
 
@@ -58,7 +58,7 @@ if tyndp_version == "2020"
 
 elseif tyndp_version == "2024"
   scenario = "GA"
-  year = "2030"
+  year = "2050"
   climate_year = "2009"
 end
 
@@ -80,7 +80,7 @@ input_data, nodal_data = _EUGO.construct_data_dictionary(tyndp_version, ntcs, ar
 # Select Dynamic Cable Rating parameters
 Tmax = 90                                                 # [degC], Temperature limit of the cables 
 T0 = 80                                                   # [degC], Initial temperature of the cables 
-prediction_horizon = 24                                   # [hours], For the optimization problem 
+prediction_horizon = 24*7                                   # [hours], For the optimization problem 
 time_elapsed = 3600                                       # [s], Time step of the simulation        
 time_constant = 27*3600                                    # [s], Thermal time constant of the cables   
 #temp_to_pow_ratio = 0.9                                   #[degC/%], parameter of the thermal model
@@ -102,8 +102,8 @@ dcr_data = Dict{String, Any}(
 
 # Select the temporal sampling method and parameters
 sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
-number_of_clusters = 2
-days_per_cluster = 2
+number_of_clusters = 12
+days_per_cluster = 7
 rep_days = collect(1:10:365)
 
 include("../src/dynamic_cable_rating/temporal_sampling.jl")
@@ -117,9 +117,13 @@ if sampling_type_flag == "rep_days"
     t, repetitions = temporal_sampling!(sampling_type_flag, prediction_horizon, number_of_clusters, days_per_cluster)
   end
 
+# Calculate the total number of repetitions to cover the whole simulation horizon 
+final_reps_total = [0]
+final_reps_total[1] = number_of_clusters*length(repetitions[1])
+
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
-examined_cables = [10, 15, 20]
-examined_conv_ratio = [2, 2.5, 3]
+examined_converters = [20, 22, 24, 26, 28, 30] # converter capacity in p.u. (100 MVA base)
+examined_deratings_cables = [1.5]
      
 
 # Initialize results DataFrame
@@ -132,9 +136,9 @@ results_df = _DF.DataFrame(
     result_ref_values = Float64[],
 )
 
-for cable_capacity in examined_cables
-    for ratio in examined_conv_ratio
-        converter_capacity = cable_capacity * ratio
+for converter_capacity in examined_converters
+    for ratio in examined_deratings_cables
+        cable_capacity = converter_capacity / ratio
         # Include necessary scripts for functions, initializations and other operations
         include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
 
@@ -156,8 +160,8 @@ for cable_capacity in examined_cables
         result_ref = simulate_case!(input_data_raw, nodal_data, solver, prediction_horizon, number_of_clusters, repetitions, cable_id, dcr_data)
         
         # Calculate mean objective function per hour
-        cost_ref = calculate_mean_obj(result_ref,final_reps_total, prediction_horizon)
-        cost_dcr = calculate_mean_obj(result,final_reps_total, prediction_horizon)
+        cost_ref = calculate_mean_obj(result_ref,final_reps_total[1], prediction_horizon)
+        cost_dcr = calculate_mean_obj(result,final_reps_total[1], prediction_horizon)
         
         # Calculate economic benefits
         economic_benefit = cost_ref - cost_dcr
@@ -168,6 +172,28 @@ for cable_capacity in examined_cables
             cable_capacity, converter_capacity,
             economic_benefit, economic_benefit_in_perc, cost_dcr, cost_ref
         ))
+
+        ## Save result dictionary as a JSON file
+        json_string = JSON.json(result)
+        result_file_name = joinpath(_EUGO.BASE_DIR, "results", "grid_parameters-derating", join(["result_zonal_tyndp_", scenario*year,"_", climate_year,"_", converter_capacity, "_", ratio, ".json"]))
+        open(result_file_name,"w") do f
+            JSON.print(f, json_string)
+        end
+
+        ## Save result dictionary as a JSON file
+        json_string = JSON.json(result_ref)
+        result_ref_file_name = joinpath(_EUGO.BASE_DIR, "results", "grid_parameters-derating", join(["result_ref_zonal_tyndp_", scenario*year,"_", climate_year,"_", converter_capacity, "_", ratio, ".json"]))
+        open(result_ref_file_name,"w") do f
+            JSON.print(f, json_string)
+        end
+
+        
+        ## Save result dictionary as a JSON file
+        json_string = JSON.json(input_data)
+        input_data_file_name = joinpath(_EUGO.BASE_DIR, "results", "grid_parameters-derating", join(["input_data_zonal_tyndp_", scenario*year,"_", climate_year,"_", converter_capacity, "_", ratio, ".json"]))
+        open(input_data_file_name,"w") do f
+            JSON.print(f, json_string)
+        end
 
     end
 
