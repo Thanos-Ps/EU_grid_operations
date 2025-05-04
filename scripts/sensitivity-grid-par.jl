@@ -123,13 +123,14 @@ final_reps_total[1] = number_of_clusters*length(repetitions[1])
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
 examined_converters = [20, 22, 24, 26, 28, 30] # converter capacity in p.u. (100 MVA base)
-examined_deratings_cables = [1.25]
+examined_cable_deratings = [1, 1.5]
      
 
 # Initialize results DataFrame
 results_df = _DF.DataFrame(
     cable_capacity = Float64[],
     converter_capacity = Float64[],
+    derating_factor = Float64[],
     economic_benefit_eur = Float64[],
     economic_benefit_perc = Float64[],
     result_values = Float64[],
@@ -137,7 +138,7 @@ results_df = _DF.DataFrame(
 )
 
 for converter_capacity in examined_converters
-  for ratio in examined_deratings_cables
+  for ratio in examined_cable_deratings
 
     cable_capacity = (converter_capacity / ratio)/2
     # Include necessary scripts for functions, initializations and other operations
@@ -170,7 +171,7 @@ for converter_capacity in examined_converters
 
     # Save the results
     push!(results_df, (
-        cable_capacity, converter_capacity,
+        cable_capacity, converter_capacity, ratio,
         economic_benefit, economic_benefit_in_perc, cost_dcr, cost_ref
     ))
 
