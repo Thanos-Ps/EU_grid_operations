@@ -49,8 +49,8 @@ if tyndp_version == "2020"
   climate_year = "2007"
 
 elseif tyndp_version == "2024"
-  scenario = "DE"
-  year = "2040"
+  scenario = "GA"
+  year = "2050"
   climate_year = "2009"
 end
 
@@ -73,7 +73,7 @@ input_data, nodal_data = _EUGO.construct_data_dictionary(tyndp_version, ntcs, ar
 # Select Dynamic Cable Rating parameters
 Tmax = 90                                                 # [degC], Temperature limit of the cables 
 T0 = 80                                                   # [degC], Initial temperature of the cables 
-prediction_horizon = 24                                   # [hours], For the optimization problem 
+prediction_horizon = 24*7                                   # [hours], For the optimization problem 
 time_elapsed = 3600                                       # [s], Time step of the simulation        
 time_constant = 27*3600                                    # [s], Thermal time constant of the cables   
 #temp_to_pow_ratio = 0.9                                   #[degC/%], parameter of the thermal model
@@ -95,16 +95,16 @@ dcr_data = Dict{String, Any}(
 
 # Select the temporal sampling method and parameters
 sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"  or "period"
-number_of_clusters = 24
-days_per_cluster = 3
+number_of_clusters = 12
+days_per_cluster = 7
 #rep_days = collect(1:10:365)
 rep_days = 1
 initial_day = 75
 period_duration_days = 30
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
-cable_capacity = 10
-converter_capacity = 25     
+cable_capacity = 13.6
+converter_capacity = 30     
 
 # Include necessary scripts for functions, initializations and other operations
 include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")

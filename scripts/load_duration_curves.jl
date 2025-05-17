@@ -1,0 +1,142 @@
+# Script to create the load duration curves of the examined cables
+
+
+# Attention: This file is based on the results located in the results folder.
+
+using Plots
+
+################### Load results from JSON files #######################
+"""
+include("loading_results.jl")
+result = result_json_dict
+input_data_raw  = input_json_dict
+"""
+########################################################################
+
+
+# Select cable
+selected_cable = 144
+
+# Discretize the range of cable loading in %
+y = LinRange(0, 100, 101)
+
+# Initialize array to store for how many hours the load is at least at a certain value
+hour_duration = zeros(length(y))
+
+# Initialize hour_id as a vector of empty integer vectors
+hour_id = [Int[] for _ in 1:length(y)-1]
+
+# Precompute current load for all hours
+    number_of_hours = 8760  # Replace with actual number
+
+    # Initilize current load array
+    current_load = zeros(number_of_hours)
+
+     # Loop over all simulated hours
+    reps_total = [0]
+    reps = [0]
+    hour = [0]
+
+    for j in 1:number_of_clusters
+        reps[1] = 0
+        for i in repetitions[j]
+            reps_total[1] += 1
+            reps[1] += 1
+            for network_hour in 1:prediction_horizon
+                hour[1] = i + network_hour - 1
+                current_load[hour[1]] = 100* abs(result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["branch"]["$selected_cable"]["pt"]) / 
+                    input_data_raw["branch"]["$selected_cable"]["rate_a"]
+            end
+        end
+    end
+
+# Loop through thresholds and assign hours
+for i in 1:length(y) -1
+    for hour in 1:number_of_hours
+        if current_load[hour] >= y[i]
+            hour_duration[i] += 1
+            push!(hour_id[i], hour)
+        end
+    end
+end
+
+# Normalize hour duration (in % of time)
+hour_duration = 100 * hour_duration / maximum(hour_duration)
+
+# Plot the load duration curve
+plot(hour_duration, y, xlabel="Percentage in Time [%]", ylabel="Loading [%]",
+#     title="Load duration Curves for NL-UK connection", label = "1 GW Converter",
+     title="Load Duration Curve for Branch $selected_cable", legend = false,
+     size=(800, 600), linewidth=2,xlabelfontsize=16,   # Bigger x-axis label font
+     ylabelfontsize=16,   # Bigger y-axis label font
+     titlefontsize=20,    # Bigger title font
+     tickfontsize=14,
+     legendfontsize = 12)     # Bigger tick labels
+
+
+
+############## Alternative way of plotting the load duration curve #################
+# Sort load data in descending order
+sorted_load = sort(current_load, rev=true)
+# Calculate percentage of time
+time_percentage = (1:length(sorted_load)) ./ length(sorted_load) .* 100
+
+
+# Create the load duration curve plot
+plot(time_percentage, sorted_load,
+    xlabel="Time Percentage (%)",
+    ylabel="Load (units)",
+    title="Load Duration Curve",
+    label=false,
+    linewidth=2,
+    color=:blue,
+    grid=true,
+    framestyle=:box)
+
+#=
+     plot(hour_duration, y, xlabel="Percentage in Time [%]", ylabel="Loading [%]",
+#     title="Load duration Curves for NL-UK connection", label = "1 GW Converter",
+     title="Load Duration Curve for BE-NL connection", legend = false,
+     size=(800, 600), linewidth=2,xlabelfontsize=16,   # Bigger x-axis label font
+     ylabelfontsize=16,   # Bigger y-axis label font
+     titlefontsize=20,    # Bigger title font
+     tickfontsize=14,
+     legendfontsize = 12)     # Bigger tick labels
+
+=#
+#=
+# Select cable
+selected_cable = 92
+
+# Discretize the range of cable loading in %
+y = LinRange(0, 100, 101)
+
+# Initialize array to store for how many hours the load is at least at a certain value
+hour_duration = zeros(length(y))
+
+# Initialize hour_id as a vector of empty integer vectors
+hour_id = [Int[] for _ in 1:length(y)-1]
+
+# Precompute current load for all hours
+number_of_hours = 8760  # Replace with actual number
+current_load = [100 * abs(result["$hour"]["solution"]["branch"]["$selected_cable"]["pt"]) / 
+                input_data_raw["branch"]["$selected_cable"]["rate_a"] for hour in 1:number_of_hours]
+
+# Loop through thresholds and assign hours
+for i in 1:length(y) - 1
+    for hour in 1:number_of_hours
+        if current_load[hour] >= y[i]
+            hour_duration[i] += 1
+            push!(hour_id[i], hour)
+        end
+    end
+end
+
+# Normalize hour duration
+hour_duration = 100 * hour_duration / maximum(hour_duration)
+
+# Plot the load duration curve
+plot!(hour_duration, y, linewidth = 2, label = "1 GW Cable")
+
+
+=#
