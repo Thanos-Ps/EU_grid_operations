@@ -80,7 +80,7 @@ input_data, nodal_data = _EUGO.construct_data_dictionary(tyndp_version, ntcs, ar
 # Select Dynamic Cable Rating parameters
 Tmax = 90                                                 # [degC], Temperature limit of the cables 
 T0 = 80                                                   # [degC], Initial temperature of the cables 
-prediction_horizon = 24                                   # [hours], For the optimization problem 
+prediction_horizon = 24*7                                   # [hours], For the optimization problem 
 time_elapsed = 3600                                       # [s], Time step of the simulation        
 time_constant = 27*3600                                    # [s], Thermal time constant of the cables   
 #temp_to_pow_ratio = 0.9                                   #[degC/%], parameter of the thermal model
@@ -102,8 +102,8 @@ dcr_data = Dict{String, Any}(
 
 # Select the temporal sampling method and parameters
 sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
-number_of_clusters = 1
-days_per_cluster = 1
+number_of_clusters = 12
+days_per_cluster = 7
 rep_days = collect(1:10:365)
 
 include("../src/dynamic_cable_rating/temporal_sampling.jl")
@@ -126,13 +126,14 @@ final_reps_total[1] = number_of_clusters*length(repetitions[1])
 #examined_cable_deratings = [1.25, 1.5]
 examined_converters = [25]
 examined_cable_deratings = [1.25]
-examined_owf_capacity = [3]
+examined_owf_capacity = [1,3,6]
      
 
 # Initialize results DataFrame
 results_df = _DF.DataFrame(
     cable_capacity = Float64[],
     converter_capacity = Float64[],
+    owf_capacity = Float64[],
     derating_factor = Float64[],
     economic_benefit_eur = Float64[],
     economic_benefit_perc = Float64[],
@@ -175,20 +176,20 @@ for owf_capacity in examined_owf_capacity
 
       # Save the results
       push!(results_df, (
-          cable_capacity, converter_capacity, ratio,
+          cable_capacity, converter_capacity, owf_capacity, ratio,
           economic_benefit, economic_benefit_in_perc, cost_dcr, cost_ref
       ))
 
       ## Save result dictionary as a JSON file
       json_string = JSON.json(result)
-      result_file_name = joinpath(_EUGO.BASE_DIR, "results", "owf_connection", join(["result_zonal_tyndp_", scenario*year,"_", climate_year,"_", converter_capacity, "_", ratio, ".json"]))
+      result_file_name = joinpath(_EUGO.BASE_DIR, "results", "owf_connection", join(["result_zonal_tyndp_", scenario*year,"_", climate_year,"_", converter_capacity, "_", ratio, "_",owf_capacity, ".json"]))
       open(result_file_name,"w") do f
         JSON.print(f, json_string)
       end
 
       ## Save result_ref dictionary as a JSON file
       json_string = JSON.json(result_ref)
-      result_ref_file_name = joinpath(_EUGO.BASE_DIR, "results", "owf_connection", join(["result_ref_zonal_tyndp_", scenario*year,"_", climate_year,"_", converter_capacity, "_", ratio, ".json"]))
+      result_ref_file_name = joinpath(_EUGO.BASE_DIR, "results", "owf_connection", join(["result_ref_zonal_tyndp_", scenario*year,"_", climate_year,"_", converter_capacity, "_", ratio, "_",owf_capacity, ".json"]))
       open(result_ref_file_name,"w") do f
         JSON.print(f, json_string)
       end
@@ -196,7 +197,7 @@ for owf_capacity in examined_owf_capacity
       
       ## Save input_data dictionary as a JSON file
       json_string = JSON.json(input_data)
-      input_data_file_name = joinpath(_EUGO.BASE_DIR, "results", "owf_connection", join(["input_zonal_tyndp_", scenario*year,"_", climate_year,"_", converter_capacity, "_", ratio, ".json"]))
+      input_data_file_name = joinpath(_EUGO.BASE_DIR, "results", "owf_connection", join(["input_zonal_tyndp_", scenario*year,"_", climate_year,"_", converter_capacity, "_", ratio, "_",owf_capacity, ".json"]))
       open(input_data_file_name,"w") do f
         JSON.print(f, json_string)
       end
