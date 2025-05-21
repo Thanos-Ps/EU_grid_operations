@@ -1,7 +1,8 @@
-function create_meshed_offshore_grid!(input_data,cable_capacity, converter_capacity, tyndp_version)
+function create_meshed_offshore_grid_owf!(input_data,cable_capacity, converter_capacity, owf_capacity, tyndp_version, climate_year, wind_offshore, nodal_data)
 # Script to add new nodes and branches and create a zonal 5-node offshore meshed grid to examine dynaminc cable rating.
 
 # Offshore grid: BE00, NL00, UK00 and Belgium offshore bus (BEOS), Netherlands offshore bus (NLOS), UK offshore bus (UKOS)
+# Extra addition: OWF bus
 
 if tyndp_version == "2020"
     # Existing buses and branches with their indexes
@@ -42,6 +43,15 @@ elseif tyndp_version == "2024"
     UK00_UKOS_id = 146
 
 end
+
+# ID of the offshore windfarm bus
+OWF_bus_id = 1000
+
+# ID of the offshore windfarm branch (converter)
+OWF_BEOS_id = 1001
+
+# ID of the offshore windfarm generator
+OWF_gen_id = 10000
 
 # Create a list that contains the IDs of the offshore cables to be used in the dynamic cable rating.
 cable_id = [BE00_UK00_id, UK00_NL00_id, BEOS_NLOS_id]
@@ -108,6 +118,29 @@ input_data["bus"]["$UKOS_id"] = Dict{String, Any}(
     "vm" => 1,
     "base_kv" => 400
 )
+
+
+# Adding offshore windfarm bus/zone/node  (OWF)
+input_data["bus"]["$OWF_bus_id"] = Dict{String, Any}(
+    # Modifiable values
+    "lat" => 51.55,
+    "lon" => 3.04,
+    "string" => "OWF",
+    "bus_i" => OWF_bus_id,
+    "number" => OWF_bus_id,
+    "source_id" => Any["bus",OWF_bus_id],
+    "index" => OWF_bus_id,
+    # Default values
+    "zone" => 1,
+    "bus_type" => 2,
+    "vmax" => 1.1,
+    "area" => 1,
+    "vmin" => 0.9,
+    "va" => 0,
+    "vm" => 1,
+    "base_kv" => 400
+)
+
 
 
 # Adding new branches to connect the three offshore nodes
@@ -219,6 +252,33 @@ input_data["branch"]["$UK00_UKOS_id"] = Dict{String, Any}(
     "tap" => 1
 )
 
+# Branch: OWF - BEOS
+input_data["branch"]["$OWF_BEOS_id"] = Dict{String, Any}(
+    # Modifiable values
+    "f_bus" => OWF_bus_id,
+    "t_bus" => BEOS_id,
+    "rate_a" => owf_capacity,
+    "rate_i" => owf_capacity,
+    "rate_p" => owf_capacity,
+    "name" => "OWF-BEOS",
+    "source_id" => Any["branch", OWF_BEOS_id],
+    "number_id" => OWF_BEOS_id,
+    "index" => OWF_BEOS_id,
+    # Default values
+    "br_r" => 0.0,
+    "br_x" => 0.1,
+    "g_to" => 0.0,
+    "g_fr" => 0.0,
+    "b_fr" => 0.0,
+    "shift" => 0.0,
+    "br_status" => 1,
+    "b_to" => 0.0,
+    "angmin" => -1.5707963267948966,
+    "angmax" => -1.5707963267948966,
+    "transformer" => false,
+    "tap" => 1
+)
+
 # Modifying existing lines (BE00-UK00 (NemoLink) and UK00-NL00) to connect with offshore nodes/buses instead of onshore nodes/buses.
 # Branch: BE00-UK00 -> BEOS-UKOS 
 input_data["branch"]["$BE00_UK00_id"]["f_bus"] = BEOS_id
@@ -235,6 +295,88 @@ input_data["branch"]["$UK00_NL00_id"]["name"] = "UKOS - NLOS"
 input_data["branch"]["$UK00_NL00_id"]["rate_a"] = cable_capacity
 input_data["branch"]["$UK00_NL00_id"]["rate_i"] = cable_capacity
 input_data["branch"]["$UK00_NL00_id"]["rate_p"] = cable_capacity
+
+
+# Adding the offshore windfarm generator
+input_data["gen"]["$OWF_gen_id"] = Dict{String, Any}(
+    "pg"                => 0.0,
+    "model"             => 2,
+    "shutdown"          => 0.0,
+    "startup"           => 0.0,
+    "qg"                => 0.0,
+    "gen_bus"           => OWF_bus_id,
+    "n_cost"            => 3,
+    "pmax"              => owf_capacity,
+    "vg"                => 1.0,
+    "mbase"             => 100.0,
+    "source_id"         => Any["gen", OWF_gen_id],
+    "node"              => "OWF",
+    "index"             => OWF_gen_id,
+    "emissions"         => 0,
+    "cost"              => [0.0, 6900.0, 0.0],
+    "qmax"              => 0.0,
+    "gen_status"        => 1,
+    "qmin"              => 0.0,
+    "inertia_constants" => 0,
+    "type"              => "Offshore Wind",
+    "pmin"              => 0.0
+)
+
+# Modify nodal data to add timeseries and capacity of OWF generator (assumption: same with BE offshore wind timeseries)
+
+# Extract time series of BE offshore wind (in normalized values)
+timeseries = convert(Vector{Float64}, wind_offshore[wind_offshore[!, "area"] .== "BE00", climate_year])
+# Scale the time series to the capacity of the offshore wind farm
+timeseries = timeseries .* (owf_capacity * 100)  # here it is MW so we multiply with base value
+
+# Modify nodal data dictionary
+nodal_data["OWF"] = Dict{String, Any}(
+    "index" => OWF_bus_id,
+    "demand" => [],
+    "generation" => Dict{String, Any}(
+        "Gas CCGT old 1"         => Dict{String, Any}("capacity"=>0.0),
+        "Oil shale old"          => Dict{String, Any}("capacity"=>0.0),
+        "Gas CCGT present 2"     => Dict{String, Any}("capacity"=>0.0),
+        "Heavy oil old 2"        => Dict{String, Any}("capacity"=>0.0),
+        "Gas CCGT present 1"     => Dict{String, Any}("capacity"=>0.0),
+        "Gas OCGT old"           => Dict{String, Any}("capacity"=>0.0),
+        "Hard coal old 1"        => Dict{String, Any}("capacity"=>0.0),
+        "Gas OCGT new"           => Dict{String, Any}("capacity"=>0.0),
+        "Light oil"              => Dict{String, Any}("capacity"=>0.0),
+        "Heavy oil old 1"        => Dict{String, Any}("capacity"=>0.0),
+        "Other non-RES"          => Dict{String, Any}("capacity"=>0.0),
+        "Run-of-River"           => Dict{String, Any}("capacity"=>0.0),
+        "Nuclear"                => Dict{String, Any}("capacity"=>0.0),
+        "Lignite new"            => Dict{String, Any}("capacity"=>0.0),
+        "Other RES"              => Dict{String, Any}("capacity"=>0.0),
+        "Gas CCGT new"           => Dict{String, Any}("capacity"=>0.0),
+        "Hard coal old 2"        => Dict{String, Any}("capacity"=>0.0),
+        "Lignite old 1"          => Dict{String, Any}("capacity"=>0.0),
+        "Gas Conventional old 2" => Dict{String, Any}("capacity"=>0.0),
+        "Gas CCGT CCS"           => Dict{String, Any}("capacity"=>0.0),
+        "Hard coal new"          => Dict{String, Any}("capacity"=>0.0),
+        "Battery"                => Dict{String, Any}("capacity"=>0.0),
+        "Reservoir"              => Dict{String, Any}("capacity"=>0.0),
+        "Lignite CCS"            => Dict{String, Any}("capacity"=>0.0),
+        "Hard coal CCS"          => Dict{String, Any}("capacity"=>0.0),
+        "Gas CCGT old 2"         => Dict{String, Any}("capacity"=>0.0),
+        "Gas Conventional old 1" => Dict{String, Any}("capacity"=>0.0),
+        "Lignite old 2"          => Dict{String, Any}("capacity"=>0.0),
+        "Oil shale new"          => Dict{String, Any}("capacity"=>0.0),
+        "Onshore Wind"           => Dict{String, Any}(
+            "timeseries"         => [],
+            "capacity"           => 0.0
+        ),
+        "Solar PV"           => Dict{String, Any}(
+            "timeseries"         => [],
+            "capacity"           => 0.0
+        ),
+        "Offshore Wind"           => Dict{String, Any}(
+            "timeseries"         => timeseries,
+            "capacity"           => owf_capacity*100  # here it is MW so we multiply with base value
+        )
+    )
+)
 
 return cable_id
 
