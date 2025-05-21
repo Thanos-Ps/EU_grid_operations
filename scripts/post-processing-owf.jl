@@ -51,5 +51,16 @@ end
 
 #### Post processing results_df #######
 benefits = results_df[!, "economic_benefit_perc"]
-plot(examined_owf_capacity,benefits)
 
+plot(examined_owf_capacity, benefits,
+        lw = 2, c =:black,
+        xlabel="OWF capacity [GW]", ylabel="Economic benefits [%]",
+        legend = false,
+        grid = true, 
+        framestyle=:box,
+        marker = (:square, 4),
+        tickfont = font(11, :bold), 
+        guidefont = font(13, :bold),
+        titlefont=font(14, "Times"),
+        dpi=300, size=(600,400)
+)
