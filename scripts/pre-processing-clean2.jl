@@ -61,12 +61,12 @@ function determine_hours_of_congestion!(selected_cable, result, input_data_raw, 
 end
 
 
-tyndp_version = "2024"
+tyndp_version = "2020"
 fetch_data = true
 number_of_hours = 8760
 
 if tyndp_version == "2020"
-  scenario = "DE"
+  scenario = "NT"
   year = "2030"
   climate_year = "2007"
 
@@ -241,10 +241,33 @@ for hour in congested_hours_list
     append!(max_cost_NL, max_cost_NL_now)
 end
     
-cost_diff = max_cost_BE .- max_cost_NL  # euro/pu * h
+cost_diff = max_cost_BE .- max_cost_UK  # euro/pu * h
 cost_diff_mwh = cost_diff/100
 
 
 num_of_pric_diff = count(x -> x != 0, cost_diff_mwh)
+price_diff_mwh = filter(x -> x != 0, cost_diff_mwh)
 
 println("Percentage of price differences during congestion: ", num_of_pric_diff/length(congested_hours_list)*100, "%")
+
+# Create histogram of price differences
+using Plots
+
+histogram(price_diff_mwh,
+    bins = 10,               # Number of bins (adjust as needed)
+    xlabel = "Price Difference [€/MWh]",
+    ylabel = "Frequency",
+    legend = false,
+    linewidth = 1,
+    color = :grey,
+    framestyle=:box,
+    alpha = 1,
+    tickfont=font(10),
+    guidefont=font(12, "Times"), 
+    titlefont=font(14, "Times"),
+    dpi=300, size=(600,400))
+
+
+#savefig("price_diff_histogram.png")
+
+plot(cost_diff_mwh)
