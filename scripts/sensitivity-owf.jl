@@ -126,7 +126,7 @@ final_reps_total[1] = number_of_clusters*length(repetitions[1])
 #examined_cable_deratings = [1.25, 1.5]
 examined_converters = [25]
 examined_cable_deratings = [1.25]
-examined_owf_capacity = [1,3,6]
+examined_owf_capacity = [10, 15, 20]
      
 
 # Initialize results DataFrame
