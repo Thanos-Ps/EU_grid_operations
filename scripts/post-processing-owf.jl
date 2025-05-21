@@ -38,7 +38,7 @@ for j in 1:number_of_clusters
 end 
 
 # Find % of curtailment hours
-tot_sim_hours = number_of_clusters*prediction_horizon*length(repetitions[1])
+#tot_sim_hours = number_of_clusters*prediction_horizon*length(repetitions[1])
 tot_sim_hours = number_of_clusters*length(t[1])
 perc_of_curt = length(curtailment_hours)/tot_sim_hours *100
 println("Percentage of curtailment: ", perc_of_curt, "%")
