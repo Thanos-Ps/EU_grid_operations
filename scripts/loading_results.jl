@@ -12,12 +12,23 @@ using EU_grid_operations; const _EUGO = EU_grid_operations
 
 
 using JSON
-"""
-scenario = "GA2030"
-climate_year = "2007"
-fetch_data = true
-number_of_hours = 8760
-"""
+
+#"""
+# Set scenario parameters
+tyndp_version = "2024"
+
+if tyndp_version == "2020"
+  scenario = "NT"
+  year = "2025"
+  climate_year = "2007"
+
+elseif tyndp_version == "2024"
+  scenario = "DE"
+  year = "2050"
+  climate_year = "2009"
+end
+#"""
+
 
 
 # Load the result JSON file as a string

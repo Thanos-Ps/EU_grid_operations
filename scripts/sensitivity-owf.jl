@@ -10,6 +10,91 @@ using EU_grid_operations; const _EUGO = EU_grid_operations
 using DCROPF
 using Plots
 
+# Function to determine curtailment hours
+function get_curtailment_hours(result, nodal_data, number_of_clusters, t, repetitions)
+    # Set the id for the OWF generator
+    selected_gen = 10000
+
+    # Initialize counters
+    reps = [0]
+    hour = [0]
+    reps_total = [0]
+
+    # Initialize arrays to store results
+    curtailment_hours = []
+
+    for j in 1:number_of_clusters
+        reps[1] = 0
+        for i in repetitions[j]            
+            reps[1] += 1        
+            reps_total[1] += 1
+            for network_hour in 1:prediction_horizon
+                hour[1] = i + network_hour - 1
+
+                # Extract them in MW
+                owf_power_output = result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["gen"]["$selected_gen"]["pg"]*100
+                owf_power_available = nodal_data["OWF"]["generation"]["Offshore Wind"]["timeseries"][hour[1]]
+
+                if owf_power_output - owf_power_available < -1  #At least 1 MW of curtailment is required (to avoid numerical errors)
+                    push!(curtailment_hours, hour[1])
+                end
+            end
+        end
+    end 
+
+    # Find % of curtailment hours
+    tot_sim_hours = number_of_clusters*length(t[1])
+    perc_of_curt = length(curtailment_hours)/tot_sim_hours *100
+
+    return curtailment_hours, perc_of_curt
+
+end
+
+function get_curtailment_energy(result, nodal_data, number_of_clusters, repetitions)
+    # Set the id for the OWF generator
+    selected_gen = 10000
+
+    # Initialize counters
+    reps = [0]
+    hour = [0]
+    reps_total = [0]
+
+    # Initialize results DataFrame
+    results_df = _DF.DataFrame(
+        owf_power_available = Float64[],
+        owf_power_output = Float64[],
+        amount_of_curtailment = Float64[],
+    )
+
+    for j in 1:number_of_clusters
+        reps[1] = 0
+        for i in repetitions[j]            
+            reps[1] += 1        
+            reps_total[1] += 1
+            for network_hour in 1:prediction_horizon
+                hour[1] = i + network_hour - 1
+
+                # Extract them in MW
+                owf_power_output = result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["gen"]["$selected_gen"]["pg"]*100
+                owf_power_available = nodal_data["OWF"]["generation"]["Offshore Wind"]["timeseries"][hour[1]]
+
+                # Check if there is curtailment
+                if owf_power_output - owf_power_available < -1  #At least 1 MW of curtailment is required (to avoid numerical errors)
+                    amount_of_curtailment = owf_power_available - owf_power_output # in MW
+                else
+                    amount_of_curtailment = 0
+                end
+
+                push!(results_df, (owf_power_available, owf_power_output, amount_of_curtailment))
+            end
+        end
+    end 
+
+    perc_of_curt = sum(results_df.amount_of_curtailment) / sum(results_df.owf_power_available) * 100  
+
+    return perc_of_curt
+
+end
 
 # Function to calculate the economic benefit
 function calculate_mean_obj(result,final_reps_total, prediction_horizon)
@@ -57,8 +142,8 @@ if tyndp_version == "2020"
   climate_year = "2007"
 
 elseif tyndp_version == "2024"
-  scenario = "GA"
-  year = "2050"
+  scenario = "NT"
+  year = "2030"
   climate_year = "2009"
 end
 
@@ -126,7 +211,7 @@ final_reps_total[1] = number_of_clusters*length(repetitions[1])
 #examined_cable_deratings = [1.25, 1.5]
 examined_converters = [25]
 examined_cable_deratings = [1.25]
-examined_owf_capacity = [10, 15, 20]
+examined_owf_capacity = [1, 5, 10]
      
 
 # Initialize results DataFrame
@@ -139,7 +224,10 @@ results_df = _DF.DataFrame(
     economic_benefit_perc = Float64[],
     result_values = Float64[],
     result_ref_values = Float64[],
+    curtailment_level = Float64[],
+    curtailment_level_ref = Float64[],
 )
+
 for owf_capacity in examined_owf_capacity
   for converter_capacity in examined_converters
     for ratio in examined_cable_deratings
@@ -174,10 +262,18 @@ for owf_capacity in examined_owf_capacity
       economic_benefit = cost_ref - cost_dcr
       economic_benefit_in_perc = (economic_benefit/cost_ref)*100
 
+      # Determine curtailment level based on hours
+      #curtailment_hours, perc_of_curt = get_curtailment_hours(result, nodal_data, number_of_clusters, t, repetitions)
+      #curtailment_hours_ref, perc_of_curt_ref = get_curtailment_hours(result_ref, nodal_data, number_of_clusters, t, repetitions)
+
+      # Determine curtailment level based on energy
+      perc_of_curt = get_curtailment_energy(result, nodal_data, number_of_clusters, repetitions)
+      perc_of_curt_ref = get_curtailment_energy(result_ref, nodal_data, number_of_clusters, repetitions)
+
       # Save the results
       push!(results_df, (
           cable_capacity, converter_capacity, owf_capacity, ratio,
-          economic_benefit, economic_benefit_in_perc, cost_dcr, cost_ref
+          economic_benefit, economic_benefit_in_perc, cost_dcr, cost_ref, perc_of_curt, perc_of_curt_ref
       ))
 
       ## Save result dictionary as a JSON file

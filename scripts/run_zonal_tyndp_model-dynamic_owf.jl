@@ -47,12 +47,12 @@ number_of_hours = 8760
 
 if tyndp_version == "2020"
   scenario = "NT"
-  year = "2030"
+  year = "2025"
   climate_year = "2007"
 
 elseif tyndp_version == "2024"
-  scenario = "NT"
-  year = "2030"
+  scenario = "DE"
+  year = "2050"
   climate_year = "2009"
 end
 
