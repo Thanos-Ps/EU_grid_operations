@@ -48,7 +48,7 @@ temperature_array = generate_temperature_array()
 solver = JuMP.optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0)
 
 # Select the TYNDP version to be used:
-tyndp_version = "2020"
+tyndp_version = "2024"
 fetch_data = true
 number_of_hours = 8760
 
@@ -59,7 +59,7 @@ if tyndp_version == "2020"
 
 elseif tyndp_version == "2024"
   scenario = "GA"
-  year = "2030"
+  year = "2050"
   climate_year = "2009"
 end
 
@@ -106,7 +106,7 @@ dcr_data = Dict{String, Any}(
 # Select the temporal sampling method and parameters
 sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days" "or "period"
 number_of_cases = 4  #here they represent number of clusters 
-days_per_cluster = 20
+days_per_cluster = 30
 #rep_days = collect(1:10:365)
 initial_day = 1
 period_duration_days = 30
@@ -158,8 +158,8 @@ for case in 1:number_of_cases
   final_reps_total = number_of_clusters*length(repetitions[1])
 
   # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
-  cable_capacity = 20
-  converter_capacity = 50     
+  cable_capacity = 10
+  converter_capacity = 25     
 
   # Include necessary scripts for functions, initializations and other operations
   include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
@@ -196,17 +196,33 @@ for case in 1:number_of_cases
   push!(economic_benefit_in_perc_values,economic_benefit_in_perc)
 
 
-  # Plot results
-  plt = plot([1:number_of_cases], economic_benefit_in_perc_values, xlabel="Season [-]", ylabel = "Average Economic Benefit per Hour [%]",
-  legend = false, title = "Effect of seasons", size=(800, 600), linewidth=2, xlabelfontsize=14,   # Bigger x-axis label font
-  ylabelfontsize=14,   # Bigger y-axis label font
-  titlefontsize=18,    # Bigger title font
-  tickfontsize=12,
-  legendfontsize = 12)     # Bigger tick labels )
 
 end
 
+# Plot results
+plt = plot([1:number_of_cases], economic_benefit_in_perc_values, xlabel="Season [-]", ylabel = "Average Economic Benefit per Hour [%]",
+legend = false, title = "Effect of seasons", size=(800, 600), linewidth=2, xlabelfontsize=14,   # Bigger x-axis label font
+ylabelfontsize=14,   # Bigger y-axis label font
+titlefontsize=18,    # Bigger title font
+tickfontsize=12,
+legendfontsize = 12)     # Bigger tick labels )
 
 
+"""
+# Script to get average temperatures from temperature_array and defined periods
+# Define day ranges
+day_ranges = [(1, 30), (91, 120), (181, 210), (271, 300)]
+
+# Convert day ranges to index ranges (hour indices)
+hour_ranges = [(24*(start_day-1)+1):(24*end_day) for (start_day, end_day) in day_ranges]
+
+# Compute averages manually
+avg_temperatures = [sum(temperature_array[hr_range]) / length(hr_range) for hr_range in hour_ranges]
+
+# Display results
+for (i, avg) in enumerate(avg_temperatures)
+    println("Average temperature for period $(day_ranges[i]) = $(round(avg, digits=2)) °C")
+end
 
 
+"""

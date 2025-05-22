@@ -94,7 +94,7 @@ temperature_array = generate_temperature_array()
 # Select Dynamic Cable Rating parameters
 Tmax = 90                                                 # [degC], Temperature limit of the cables 
 T0 = 80                                                   # [degC], Initial temperature of the cables 
-prediction_horizon = 24                                   # [hours], For the optimization problem 
+prediction_horizon = 24*7                                   # [hours], For the optimization problem 
 time_elapsed = 3600                                       # [s], Time step of the simulation        
 time_constant = 27*3600                                    # [s], Thermal time constant of the cables   
 temp_to_pow_ratio = 0.72                                   # [degC/%], parameter of the thermal model
@@ -114,12 +114,12 @@ dcr_data = Dict{String, Any}(
   )
 
 # Select the temporal sampling method and parameters
-sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days" or "period"
+sampling_type_flag = "period"                           # Options: "clusters" or "rep_days" or "period"
 number_of_clusters = 1
 days_per_cluster = 1
 rep_days = collect(1:10:365)
-initial_day = 1
-period_duration_days = 365
+initial_day = 271
+period_duration_days = 30
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
 cable_capacity = 10

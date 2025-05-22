@@ -50,7 +50,7 @@ temperature_array = generate_temperature_array()
 solver = JuMP.optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0)
 
 # Select the TYNDP version to be used:
-tyndp_version = "2020"
+tyndp_version = "2024"
 fetch_data = true
 number_of_hours = 8760
 
@@ -61,7 +61,7 @@ if tyndp_version == "2020"
 
 elseif tyndp_version == "2024"
   scenario = "GA"
-  year = "2030"
+  year = "2050"
   climate_year = "2009"
 end
 
@@ -109,7 +109,7 @@ if sensitivity_flag == "T_amb"
 
     # Select fixed DCR parameters
     T0 = examined_T0[3]                                                   
-    prediction_horizon = examined_prediction_horizon[1]                                  
+    prediction_horizon = examined_prediction_horizon[2]                                  
     time_constant = examined_time_constant[2]                                    
     temp_to_pow_ratio = examined_temp_to_pow_ratio[2]                                 
 
@@ -129,7 +129,7 @@ if sensitivity_flag == "T_amb"
     # Select the temporal sampling method and parameters
     sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"
     number_of_clusters = 12
-    days_per_cluster = 3
+    days_per_cluster = 7
     rep_days = collect(1:10:365)
 
     # Define capacities of branches in offshore grid in p.u. with base value 100 MVA

@@ -51,43 +51,43 @@ sensitivity_cases = [
         :tyndp_version => "2024",
         :scenario => "NT",
         :year => "2030",
-        :climate_year => "2008"
+        :climate_year => "1995"
     ),
     Dict(
         :tyndp_version => "2024",
         :scenario => "GA",
         :year => "2030",
-        :climate_year => "2008"
+        :climate_year => "1995"
     ),
     Dict(
         :tyndp_version => "2024",
         :scenario => "DE",
         :year => "2030",
-        :climate_year => "2008"
+        :climate_year => "1995"
     ),
     Dict(
         :tyndp_version => "2024",
         :scenario => "GA",
         :year => "2040",
-        :climate_year => "2008"
+        :climate_year => "1995"
     ),
     Dict(
         :tyndp_version => "2024",
         :scenario => "DE",
         :year => "2040",
-        :climate_year => "2008"
+        :climate_year => "1995"
     ),
     Dict(
         :tyndp_version => "2024",
         :scenario => "GA",
         :year => "2050",
-        :climate_year => "2008"
+        :climate_year => "1995"
     ),
     Dict(
         :tyndp_version => "2024",
         :scenario => "DE",
         :year => "2050",
-        :climate_year => "2008"
+        :climate_year => "1995"
     )
 ]
 
