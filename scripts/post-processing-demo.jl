@@ -1,7 +1,7 @@
 using Plots
 
 # Due to the temporal sampling, only 1 time slice (cluster) will be plotted (at least for now), to ensure continuity of time.
-selected_cluster = 2
+selected_cluster = 1
 selected_cable = cable_id[1]
 temperature_values = []
 power_values = []
@@ -86,7 +86,7 @@ for j in 1:number_of_clusters
         end
     end
 end
-"""
+
 # Filter out power values that are not 0
 power_values_no_zero = filter(x -> x != 0, power_values_hist)
 # Convert power values to positive values
@@ -107,7 +107,7 @@ h1 = histogram(abs_power_values, bins=10, xlabel="Power Rating [%]", ylabel="Fre
 # Save the histogram
 savefig(h1, "demo_cable_$selected_cable-histogram.png")
 
-"""
+
 
 
 
