@@ -13,7 +13,7 @@ using EU_grid_operations; const _EUGO = EU_grid_operations
 
 using JSON
 
-#"""
+"""
 # Set scenario parameters
 tyndp_version = "2024"
 
@@ -27,7 +27,7 @@ elseif tyndp_version == "2024"
   year = "2050"
   climate_year = "2009"
 end
-#"""
+"""
 
 
 

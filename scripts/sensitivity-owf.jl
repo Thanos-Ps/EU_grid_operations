@@ -142,8 +142,8 @@ if tyndp_version == "2020"
   climate_year = "2007"
 
 elseif tyndp_version == "2024"
-  scenario = "NT"
-  year = "2030"
+  scenario = "GA"
+  year = "2050"
   climate_year = "2009"
 end
 
@@ -305,3 +305,5 @@ end
 
 # Save results
 CSV.write("sensitivity_owf_results.csv", results_df)
+
+
