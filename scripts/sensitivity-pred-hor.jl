@@ -39,7 +39,7 @@ solver = JuMP.optimizer_with_attributes(Gurobi.Optimizer, "OutputFlag" => 0)
 
 
 # Select the TYNDP version to be used:
-tyndp_version = "2020"
+tyndp_version = "2024"
 fetch_data = true
 number_of_hours = 8760
 
@@ -49,8 +49,8 @@ if tyndp_version == "2020"
   climate_year = "2007"
 
 elseif tyndp_version == "2024"
-  scenario = "DE"
-  year = "2040"
+  scenario = "GA"
+  year = "2050"
   climate_year = "2009"
 end
 
@@ -71,13 +71,17 @@ input_data, nodal_data = _EUGO.construct_data_dictionary(tyndp_version, ntcs, ar
 
 
 #Initialize lists to store results
-result_values = []
-result_ref_values = []
-economic_benefit_values = []
-economic_benefit_in_perc_values = []
+
+results_df = _DF.DataFrame(
+    prediction_horizon = Int[],
+    cost_dcr = Float64[],
+    cost_ref = Float64[],
+    economic_benefit = Float64[],
+    economic_benefit_in_perc = Float64[]
+)
 
 # Select examined horizons
-examined_horizons = [24, 24*7, 24*30]
+examined_horizons = [24, 24*7, 24*30, 24*90]
 
 for prediction_horizon in examined_horizons
     # Select Dynamic Cable Rating parameters
@@ -106,11 +110,11 @@ for prediction_horizon in examined_horizons
     # Select the temporal sampling method and parameters
     sampling_type_flag = "period"                           # Options: "clusters" or "rep_days"  or "period"
     initial_day = 75
-    period_duration_days = 30
+    period_duration_days = 90
 
     # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
-    cable_capacity = 20
-    converter_capacity = 50     
+    cable_capacity = 10
+    converter_capacity = 25     
 
     # Include necessary scripts for functions, initializations and other operations
     include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
@@ -149,19 +153,22 @@ for prediction_horizon in examined_horizons
     economic_benefit_in_perc = (economic_benefit/cost_ref)*100
 
     # Store results
-    push!(result_values, cost_dcr)
-    push!(result_ref_values, cost_ref)
-    push!(economic_benefit_values, economic_benefit)
-    push!(economic_benefit_in_perc_values,economic_benefit_in_perc)
+    push!(results_df, (prediction_horizon, cost_dcr, cost_ref, economic_benefit, economic_benefit_in_perc))
 
-    # Plot results
-    plt = plot(examined_horizons, economic_benefit_in_perc_values, xlabel="Prediction horizon size [h]", ylabel = "Average Economic Benefit per Hour [%]",
-    legend = false, title = "Effect of prediction horizon size", size=(800, 600), linewidth=2, xlabelfontsize=14,   # Bigger x-axis label font
-    ylabelfontsize=14,   # Bigger y-axis label font
-    titlefontsize=18,    # Bigger title font
-    tickfontsize=12,
-    legendfontsize = 12)     # Bigger tick labels )
 
 end
 
+p1 = plot(results_df.prediction_horizon, results_df.economic_benefit_in_perc_velus,
+    lw = 2, c =:black, xlabel="Optimization Horizon size [h]", ylabel="Economic Benefit [%]",
+    marker = (:square, 6),
+    legend = false, 
+    grid = false, framestyle=:box, 
+    #xticks = 1:13,
+    tickfont=font(14),
+    guidefont=font(16), 
+    titlefont=font(14),
+    dpi=300, size=(800,600)
+    )
 
+
+savefig(p1, "sensitivity-pred-hor.png")

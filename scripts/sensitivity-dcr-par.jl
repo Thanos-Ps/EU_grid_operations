@@ -86,7 +86,7 @@ examined_prediction_horizon = [24, 168, 720]                                    
 examined_time_constant = [15*3600, 27*3600, 35*3600]
 rescaled_time_constant = examined_time_constant/3600                             # [s], Thermal time constant of the cables   
 examined_temp_to_pow_ratio = [0.6, 0.72, 0.9]                                    # [degC/%], parameter of the thermal model
-examined_T_amb = [8, 13, 18]  
+examined_T_amb = [8, 11, 15, 18]  
 
 # Define fixed DCR parameters
 Tmax = 90                                                 # [degC], Temperature limit of the cables 
@@ -99,6 +99,16 @@ result_values = []
 result_ref_values = []
 economic_benefit_values = []
 economic_benefit_in_perc_values = []
+
+#Initialize results DataFrame
+results_df = _DF.DataFrame(
+    T_amb = Float64[],
+    result_values = Float64[],
+    result_ref_values = Float64[],
+    economic_benefit_values = Float64[],
+    economic_benefit_in_perc_velus = Float64[]
+)
+
 
 
 if sensitivity_flag == "T_amb"
@@ -178,11 +188,15 @@ if sensitivity_flag == "T_amb"
     economic_benefit_in_perc = (economic_benefit/cost_ref)*100
 
     # Store results
+    """
     push!(result_values, cost_dcr)
     push!(result_ref_values, cost_ref)
     push!(economic_benefit_values, economic_benefit)
     push!(economic_benefit_in_perc_values,economic_benefit_in_perc)
+    """
 
+    push!(results_df, (T_amb, cost_dcr, cost_ref, economic_benefit, economic_benefit_in_perc))
+    
     # Plot results
     plt = plot(examined_T_amb, economic_benefit_in_perc_values, xlabel="T_amb [degC]", ylabel = "Average Economic Benefit per Hour [%]",
     legend = false, title = "Effect of seabed temperature", size=(800, 600), linewidth=2, xlabelfontsize=14,   # Bigger x-axis label font
@@ -374,5 +388,23 @@ elseif sensitivity_flag == "temp_to_pow_ratio"
 
 end
 
+
+# === Save results to CSV file ===
+CSV.write("sensitivity_results_dcr-par.csv", results_df)
+
+
+
+p1 = plot(results_df.T_amb, results_df.economic_benefit_in_perc_velus,
+        lw = 2, c =:black, xlabel="Seabed Temperature [°C]", ylabel="Economic Benefit [%]",
+        marker = (:square, 6),
+        legend = false, 
+        grid = false, framestyle=:box, 
+        #xticks = 1:13,
+        tickfont=font(14),
+        guidefont=font(16), 
+        titlefont=font(14),
+        dpi=300, size=(800,600)
+        )
 # === Export as PDF or PNG ===
 #savefig(plt, "thesis_plot.png")  # Change to .png if preferred
+savefig(p1, "sensitivity_dcr-par.png")  # Change to .png if preferred

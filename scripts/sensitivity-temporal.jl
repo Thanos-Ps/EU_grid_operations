@@ -10,6 +10,83 @@ using EU_grid_operations; const _EUGO = EU_grid_operations
 using DCROPF
 using Plots
 
+# Function to calculate grid calculate_grid_usage
+function calculate_grid_usage(tyndp_version, number_of_clusters, repetitions, result)
+
+  if tyndp_version == "2024"
+      #ID of added branches:
+      BE00_BEOS_id = 143
+      NL00_NLOS_id = 144
+      UK00_UKOS_id = 146
+  elseif tyndp_version == "2020"
+      #ID of added branches:
+      BE00_BEOS_id = 120
+      NL00_NLOS_id = 121
+      UK00_UKOS_id = 127
+
+  end 
+
+  # Initialize results DataFrame
+  results_df = _DF.DataFrame(
+      pf_uk = Float64[],
+      pf_be = Float64[],
+      pf_nl = Float64[],
+      total_power = Float64[],
+  )
+
+  # Initialize indexes
+  reps_total = [0]
+  hour = [0]
+
+  # Calibrate the reps_total counter to the beginning of the selected time slice.
+  #reps_total[1] = length(repetitions[1])*(selected_cluster -1)
+
+  for j in 1:number_of_clusters
+    for i in repetitions[j]  
+      reps_total[1] += 1
+      for network_hour in 1:prediction_horizon
+        hour[1] = i + network_hour - 1 
+        pf_uk = result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["branch"]["$UK00_UKOS_id"]["pf"]
+        pf_be = result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["branch"]["$BE00_BEOS_id"]["pf"]
+        pf_nl = result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["branch"]["$NL00_NLOS_id"]["pf"]
+
+
+        total_power = abs(pf_uk) + abs(pf_be) + abs(pf_nl)
+        #total_power = pf_uk + pf_be
+
+        # Append the values to the DataFrame
+        push!(results_df.pf_uk, pf_uk)
+        push!(results_df.pf_be, pf_be)
+        push!(results_df.pf_nl, pf_nl)
+        push!(results_df.total_power, total_power)
+      end
+    end
+  end
+
+  # Calculate average power flowing through the meshed offshore grid
+  average_power = sum(results_df.total_power)/length(results_df.total_power)
+
+  return average_power/10 # Convert to GW/h
+
+end
+
+function average_temperature_for_cluster(selected_cluster, t, temperature_array)
+    # Get the hour indices in the current segment
+    hours_in_segment = t[selected_cluster]
+
+    # Initialize accumulator
+    total = 0.0
+    count = 0
+
+    # Loop over hours and compute the total temperature
+    for h in hours_in_segment
+        total += temperature_array[h]
+        count += 1
+    end
+
+    # Return the average, with a safety check for empty segments
+    return count > 0 ? total / count : 0.0
+end
 
 # Function to calculate the economic benefit
 function calculate_mean_obj(result,final_reps_total, prediction_horizon)
@@ -82,7 +159,7 @@ input_data, nodal_data = _EUGO.construct_data_dictionary(tyndp_version, ntcs, ar
 # Select Dynamic Cable Rating parameters
 Tmax = 90                                                 # [degC], Temperature limit of the cables 
 T0 = 80                                                   # [degC], Initial temperature of the cables 
-prediction_horizon = 24                                   # [hours], For the optimization problem 
+prediction_horizon = 24*7                                   # [hours], For the optimization problem 
 time_elapsed = 3600                                       # [s], Time step of the simulation        
 time_constant = 27*3600                                    # [s], Thermal time constant of the cables   
 #temp_to_pow_ratio = 0.9                                   #[degC/%], parameter of the thermal model
@@ -105,8 +182,8 @@ dcr_data = Dict{String, Any}(
 
 # Select the temporal sampling method and parameters
 sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days" "or "period"
-number_of_cases = 4  #here they represent number of clusters 
-days_per_cluster = 30
+number_of_cases = 12  #here they represent number of clusters 
+days_per_cluster = 7
 #rep_days = collect(1:10:365)
 initial_day = 1
 period_duration_days = 30
@@ -119,10 +196,16 @@ all_t, all_repetitions = temporal_sampling!(sampling_type_flag, prediction_horiz
 
 
 #Initialize lists to store results
-result_values = []
-result_ref_values = []
-economic_benefit_values = []
-economic_benefit_in_perc_values = []
+# Initialize results DataFrame
+result_df = results_df = _DF.DataFrame(
+    period = Float64[],
+    result_values = Float64[],
+    result_ref_values = Float64[],
+    economic_benefit_values = Float64[],
+    economic_benefit_in_perc_values = Float64[],
+    grid_usage = Float64[],
+    average_temp = Float64[]
+)
 
 """
 # Define the first day for the "period" sampling method
@@ -189,15 +272,38 @@ for case in 1:number_of_cases
   economic_benefit = cost_ref - cost_dcr
   economic_benefit_in_perc = (economic_benefit/cost_ref)*100
 
-  # Store results
-  push!(result_values, cost_dcr)
-  push!(result_ref_values, cost_ref)
-  push!(economic_benefit_values, economic_benefit)
-  push!(economic_benefit_in_perc_values,economic_benefit_in_perc)
+  # Calculate grid grid_usage
+  grid_usage = calculate_grid_usage(tyndp_version, number_of_clusters, repetitions, result)
 
+  # Calculate average temperature
+  aver_temp = average_temperature_for_cluster(case, all_t, temperature_array)
+
+  # Save the results
+  push!(results_df, (case, cost_dcr, cost_ref, economic_benefit, economic_benefit_in_perc, grid_usage, aver_temp))
 
 
 end
+
+
+# Save results_df as .csv
+CSV.write("sensitivity_seasonality_results.csv", results_df)
+
+
+p1 = plot(results_df.period, results_df.economic_benefit_in_perc_values,
+        lw = 2, c =:black, xlabel="Month", ylabel="Economic Benefit [%]",
+        #title="Loading of Cable $selected_cable", 
+        legend = false, 
+        grid = false, framestyle=:box, 
+        xticks = 1:13,
+        tickfont=font(14),
+        guidefont=font(16), 
+        titlefont=font(14),
+        dpi=300, size=(800,600)
+        )
+
+savefig(p1, "sensitivity_seasonality_results.png")
+
+"""
 
 # Plot results
 plt = plot([1:number_of_cases], economic_benefit_in_perc_values, xlabel="Season [-]", ylabel = "Average Economic Benefit per Hour [%]",
@@ -206,23 +312,5 @@ ylabelfontsize=14,   # Bigger y-axis label font
 titlefontsize=18,    # Bigger title font
 tickfontsize=12,
 legendfontsize = 12)     # Bigger tick labels )
-
-
-"""
-# Script to get average temperatures from temperature_array and defined periods
-# Define day ranges
-day_ranges = [(1, 30), (91, 120), (181, 210), (271, 300)]
-
-# Convert day ranges to index ranges (hour indices)
-hour_ranges = [(24*(start_day-1)+1):(24*end_day) for (start_day, end_day) in day_ranges]
-
-# Compute averages manually
-avg_temperatures = [sum(temperature_array[hr_range]) / length(hr_range) for hr_range in hour_ranges]
-
-# Display results
-for (i, avg) in enumerate(avg_temperatures)
-    println("Average temperature for period $(day_ranges[i]) = $(round(avg, digits=2)) °C")
-end
-
 
 """

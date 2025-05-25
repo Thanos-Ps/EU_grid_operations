@@ -93,3 +93,30 @@ end
 parameters_json = JSON.parse(parameters_string)
 # It seems it needs parsing two times.
 parameters_json_dict = JSON.parse(parameters_json)
+
+"""
+# Read CSV files for plotting
+df_normal = CSV.read("sensitivity_seasonality_results.csv", _DF.DataFrame)
+sorted_df = sort(df, :grid_usage)
+
+p1 = plot(df.period, df.economic_benefit_in_perc_values,
+        lw = 2, c =:black, xlabel="Month", ylabel="Economic Benefit [%]",
+        #title="Loading of Cable $selected_cable", 
+        label = "Constant Seabed Temperature",
+        #legend = false, 
+        grid = false, framestyle=:box, 
+        xticks=1:1:13,
+        tickfont=font(14),
+        guidefont=font(16), 
+        titlefont=font(14),
+        dpi=300, size=(800,600)
+        )
+      
+plot!(df_normal.period, df_normal.economic_benefit_in_perc_values,
+        lw = 2, c =:red, label = "Varying Seabed Temperature"
+        #title="Loading of Cable $selected_cable", 
+        )
+        
+savefig(p1, "sensitivity_seasonality_results_comparison.png")
+
+"""

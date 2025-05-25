@@ -94,7 +94,7 @@ dcr_data = Dict{String, Any}(
   )
 
 # Select the temporal sampling method and parameters
-sampling_type_flag = "period"                           # Options: "clusters" or "rep_days"  or "period"
+sampling_type_flag = "clusters"                           # Options: "clusters" or "rep_days"  or "period"
 number_of_clusters = 12
 days_per_cluster = 7
 #rep_days = collect(1:10:365)
@@ -103,8 +103,8 @@ initial_day = 1
 period_duration_days = 30
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
-cable_capacity = 10
-converter_capacity = 25     
+cable_capacity = 6.86
+converter_capacity = 24     
 
 # Include necessary scripts for functions, initializations and other operations
 include("../src/dynamic_cable_rating/create_meshed_offshore_grid.jl")
