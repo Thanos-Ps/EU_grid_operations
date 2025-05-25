@@ -123,8 +123,7 @@ final_reps_total[1] = number_of_clusters*length(repetitions[1])
 
 # Define capacities of branches in offshore grid in p.u. with base value 100 MVA
 examined_converters = [20, 22, 24, 26, 28, 30] # converter capacity in p.u. (100 MVA base)
-examined_cable_deratings = [1, 1.5]
-     
+examined_cable_deratings = [1.75]
 
 # Initialize results DataFrame
 results_df = _DF.DataFrame(

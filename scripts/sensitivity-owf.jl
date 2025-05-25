@@ -235,7 +235,7 @@ for owf_capacity in examined_owf_capacity
       cable_capacity = (converter_capacity / ratio)/2
 
       # Include necessary scripts for functions, initializations and other operations
-      include("../src/dynamic_cable_rating/create_meshed_offshore_grid_owf.jl")
+      include("../src/dynamic_cable_rating/create_meshed_offshore_grid_owf2.jl")
 
       # Modify the input_data dictionary to add the offshore grid and extract the cable_id vector
       cable_id = create_meshed_offshore_grid_owf!(input_data,cable_capacity, converter_capacity, owf_capacity, tyndp_version, climate_year, wind_offshore, nodal_data)
@@ -269,6 +269,7 @@ for owf_capacity in examined_owf_capacity
       # Determine curtailment level based on energy
       perc_of_curt = get_curtailment_energy(result, nodal_data, number_of_clusters, repetitions)
       perc_of_curt_ref = get_curtailment_energy(result_ref, nodal_data, number_of_clusters, repetitions)
+
 
       # Save the results
       push!(results_df, (

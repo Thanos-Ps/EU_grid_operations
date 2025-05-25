@@ -158,7 +158,9 @@ for prediction_horizon in examined_horizons
 
 end
 
-p1 = plot(results_df.prediction_horizon, results_df.economic_benefit_in_perc_velus,
+CSV.write("sensitivity_results_pred_horizon.csv", results_df)
+
+p1 = plot(results_df.prediction_horizon, results_df.economic_benefit_in_perc,
     lw = 2, c =:black, xlabel="Optimization Horizon size [h]", ylabel="Economic Benefit [%]",
     marker = (:square, 6),
     legend = false, 

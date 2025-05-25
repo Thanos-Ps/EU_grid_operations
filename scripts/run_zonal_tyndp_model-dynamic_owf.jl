@@ -51,7 +51,7 @@ if tyndp_version == "2020"
   climate_year = "2007"
 
 elseif tyndp_version == "2024"
-  scenario = "DE"
+  scenario = "GA"
   year = "2050"
   climate_year = "2009"
 end
@@ -86,6 +86,54 @@ function generate_temperature_array()
   # Ensure the length matches 8760 hours
   @assert length(T_hourly) == total_hours
   return T_hourly
+end
+
+
+function get_curtailment_energy(result, nodal_data, number_of_clusters, repetitions)
+    # Set the id for the OWF generator
+    selected_gen = 10000
+
+    # Initialize counters
+    reps = [0]
+    hour = [0]
+    reps_total = [0]
+
+    # Initialize results DataFrame
+    results_df = _DF.DataFrame(
+        hour = Float64[],
+        owf_power_available = Float64[],
+        owf_power_output = Float64[],
+        amount_of_curtailment = Float64[],
+    )
+
+    for j in 1:number_of_clusters
+        reps[1] = 0
+        for i in repetitions[j]            
+            reps[1] += 1        
+            reps_total[1] += 1
+            for network_hour in 1:prediction_horizon
+                hour[1] = i + network_hour - 1
+
+                # Extract them in MW
+                owf_power_output = result["$(reps_total[1])"]["solution"]["nw"]["$network_hour"]["gen"]["$selected_gen"]["pg"]*100
+                owf_power_available = nodal_data["OWF"]["generation"]["Offshore Wind"]["timeseries"][hour[1]]
+
+                # Check if there is curtailment
+                if owf_power_output - owf_power_available < -1  #At least 1 MW of curtailment is required (to avoid numerical errors)
+                    amount_of_curtailment = owf_power_available - owf_power_output # in MW
+                else
+                    amount_of_curtailment = 0
+                end
+
+                push!(results_df, (hour[1], owf_power_available, owf_power_output, amount_of_curtailment))
+            end
+        end
+    end 
+
+    perc_of_curt = sum(results_df.amount_of_curtailment) / sum(results_df.owf_power_available) * 100  
+
+    return perc_of_curt, results_df
+
 end
 
 # Generate the temperature array
@@ -124,10 +172,10 @@ period_duration_days = 365
 # Define capacities of branches in offshore grid in p.u. with base value 100 MW (devide by 10 to get GW value)
 cable_capacity = 10       
 converter_capacity = 25   
-owf_capacity = 3          
+owf_capacity = 10          
 
 # Include necessary scripts for functions, initializations and other operations
-include("../src/dynamic_cable_rating/create_meshed_offshore_grid_owf.jl")
+include("../src/dynamic_cable_rating/create_meshed_offshore_grid_owf2.jl")
 include("../src/dynamic_cable_rating/temporal_sampling.jl")
 
 # Modify the input_data dictionary to add the offshore grid and extract the cable_id vector
@@ -192,6 +240,8 @@ for j in 1:number_of_clusters
   end
 
 end
+
+perc_of_curt, results_df = get_curtailment_energy(result, nodal_data, number_of_clusters, repetitions)
 
 # Store all selected parameters in a dictionary
 set_of_parameters = Dict{String, Any}(

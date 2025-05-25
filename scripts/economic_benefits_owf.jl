@@ -108,7 +108,7 @@ converter_capacity = 30
 owf_capacity = 3   
 
 # Include necessary scripts for functions, initializations and other operations
-include("../src/dynamic_cable_rating/create_meshed_offshore_grid_owf.jl")
+include("../src/dynamic_cable_rating/create_meshed_offshore_grid_owf2.jl")
 include("../src/dynamic_cable_rating/temporal_sampling.jl")
 
 # Modify the input_data dictionary to add the offshore grid and extract the cable_id vector
