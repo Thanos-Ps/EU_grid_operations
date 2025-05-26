@@ -49,13 +49,13 @@ OWF_bus_id = 1000
 
 # ID of the offshore windfarm branch (converter)
 OWF_NLOS_id = 1001
-OWF_UKOS_id = 1002
+#OWF_UKOS_id = 1002
 
 # ID of the offshore windfarm generator
 OWF_gen_id = 10000
 
 # Create a list that contains the IDs of the offshore cables to be used in the dynamic cable rating.
-cable_id = [BE00_UK00_id, UK00_NL00_id, BEOS_NLOS_id]
+cable_id = [BE00_UK00_id, UK00_NL00_id, BEOS_NLOS_id, OWF_NLOS_id]
 
 # Adding offshore Beglian bus/zone  (BEOS)
 input_data["bus"]["$BEOS_id"] = Dict{String, Any}(
@@ -280,32 +280,6 @@ input_data["branch"]["$OWF_NLOS_id"] = Dict{String, Any}(
     "tap" => 1
 )
 
-# Branch: OWF - UKOS
-input_data["branch"]["$OWF_UKOS_id"] = Dict{String, Any}(
-    # Modifiable values
-    "f_bus" => OWF_bus_id,
-    "t_bus" => UKOS_id,
-    "rate_a" => cable_capacity,
-    "rate_i" => cable_capacity,
-    "rate_p" => cable_capacity,
-    "name" => "OWF-UKOS",
-    "source_id" => Any["branch", OWF_UKOS_id],
-    "number_id" => OWF_UKOS_id,
-    "index" => OWF_UKOS_id,
-    # Default values
-    "br_r" => 0.0,
-    "br_x" => 0.1,
-    "g_to" => 0.0,
-    "g_fr" => 0.0,
-    "b_fr" => 0.0,
-    "shift" => 0.0,
-    "br_status" => 1,
-    "b_to" => 0.0,
-    "angmin" => -1.5707963267948966,
-    "angmax" => -1.5707963267948966,
-    "transformer" => false,
-    "tap" => 1
-)
 
 # Modifying existing lines (BE00-UK00 (NemoLink) and UK00-NL00) to connect with offshore nodes/buses instead of onshore nodes/buses.
 # Branch: BE00-UK00 -> BEOS-UKOS 
@@ -318,8 +292,8 @@ input_data["branch"]["$BE00_UK00_id"]["rate_p"] = cable_capacity
 
 # Branch: UK00-NL00 -> UKOS-NLOS
 input_data["branch"]["$UK00_NL00_id"]["f_bus"] = UKOS_id
-input_data["branch"]["$UK00_NL00_id"]["t_bus"] = NLOS_id
-input_data["branch"]["$UK00_NL00_id"]["name"] = "UKOS - NLOS"
+input_data["branch"]["$UK00_NL00_id"]["t_bus"] = OWF_bus_id
+input_data["branch"]["$UK00_NL00_id"]["name"] = "UKOS - OWF"
 input_data["branch"]["$UK00_NL00_id"]["rate_a"] = cable_capacity
 input_data["branch"]["$UK00_NL00_id"]["rate_i"] = cable_capacity
 input_data["branch"]["$UK00_NL00_id"]["rate_p"] = cable_capacity
