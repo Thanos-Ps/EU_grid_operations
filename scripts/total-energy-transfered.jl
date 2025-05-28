@@ -253,13 +253,33 @@ for j in 1:number_of_clusters
 end
 
 
-# Calculate total cable utilization
+# Calculate total cable utilization (of all 3 cables)
 total_cable_utilization_dcr = sum(results_df.total_power_dcr)*100           # Convert to MWh 
 total_cable_utilization_no_dcr = sum(results_df.total_power_no_dcr)*100 
+
+# Calculate total cable utilization of BE-UK
+total_cable_utilization_be_uk_dcr = sum(abs.(results_df.pf_be_uk_dcr))*100           # Convert to MWh 
+total_cable_utilization_be_uk_no_dcr = sum(abs.(results_df.pf_be_uk_no_dcr))*100 
+
+
+# Calculate total cable utilization of NL-UK
+total_cable_utilization_nl_uk_dcr = sum(abs.(results_df.pf_nl_uk_dcr))*100           # Convert to MWh 
+total_cable_utilization_nl_uk_no_dcr = sum(abs.(results_df.pf_nl_uk_no_dcr))*100 
+
+# Calculate total cable utilization of BE-NL
+total_cable_utilization_be_nl_dcr = sum(abs.(results_df.pf_be_nl_dcr))*100           # Convert to MWh 
+total_cable_utilization_be_nl_no_dcr = sum(abs.(results_df.pf_be_nl_no_dcr))*100 
 
 # Print the results
 println("Total cable utilization with DCR: $total_cable_utilization_dcr MWh")
 println("Total cable utilization without DCR: $total_cable_utilization_no_dcr MWh")
+println("Total cable utilization BE-UK with DCR: $total_cable_utilization_be_uk_dcr MWh")
+println("Total cable utilization BE-UK without DCR: $total_cable_utilization_be_uk_no_dcr MWh")
+println("Total cable utilization NL-UK with DCR: $total_cable_utilization_nl_uk_dcr MWh")
+println("Total cable utilization NL-UK without DCR: $total_cable_utilization_nl_uk_no_dcr MWh")
+println("Total cable utilization BE-NL with DCR: $total_cable_utilization_be_nl_dcr MWh")
+println("Total cable utilization BE-NL without DCR: $total_cable_utilization_be_nl_no_dcr MWh")
+
 
 # Cacluate percentage of difference
 percentage_difference = (total_cable_utilization_dcr - total_cable_utilization_no_dcr) / total_cable_utilization_no_dcr * 100
