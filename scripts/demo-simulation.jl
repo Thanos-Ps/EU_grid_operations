@@ -132,7 +132,7 @@ include("../src/dynamic_cable_rating/temporal_sampling.jl")
 # Modify the input_data dictionary to add the offshore grid and extract the cable_id vector
 cable_id = create_meshed_offshore_grid!(input_data,cable_capacity,converter_capacity, tyndp_version)
 # If you want to run the reference case (without DCR) -> set cable_id = []
-cable_id = [] 
+#cable_id = [] 
 
 # Make copy of input data dictionary as RES and demand data updated for each hour (and also include the created offhsore grid)
 input_data_raw = deepcopy(input_data)
@@ -187,47 +187,9 @@ for j in 1:number_of_clusters
     end
     # Solve the DCR-OPF problem for the given prediction horizon (simultaneously)
     result["$(reps_total[1])"] = DCROPF.solve_dcropf(mn_data, PowerModels.NFAPowerModel, solver, cable_id, dcr_data, result, reps[1], reps_total[1], prediction_horizon, i)
- 
+    
+
   end
 
 end
 
-# Store all selected parameters in a dictionary
-set_of_parameters = Dict{String, Any}(
-  "dcr_data" => dcr_data,
-  "cable_capacity" => cable_capacity,
-  "converter_capacity" => converter_capacity,
-  "sampling_type_flag" => sampling_type_flag,
-  "number_of_clusters" => number_of_clusters,
-  "days_per_cluster" => days_per_cluster,
-)
-
-## Write out JSON files
-# Result file, with hourly results
-json_string = JSON.json(result)
-result_file_name = joinpath(_EUGO.BASE_DIR, "results", "TYNDP"*tyndp_version, join(["result_zonal_tyndp_", scenario*year,"_", climate_year, ".json"]))
-open(result_file_name,"w") do f
-  JSON.print(f, json_string)
-end
-
-# Input data dictionary as .json file
-input_file_name = joinpath(_EUGO.BASE_DIR, "results", "TYNDP"*tyndp_version,  join(["input_zonal_tyndp_", scenario*year,"_", climate_year, ".json"]))
-json_string = JSON.json(input_data_raw)
-open(input_file_name,"w") do f
-  JSON.print(f, json_string)
-end
-
-# scenario file (e.g. zonal time series and installed capacities) as .json file
-scenario_file_name = joinpath(_EUGO.BASE_DIR, "results", "TYNDP"*tyndp_version, join(["scenario_zonal_tyndp_", scenario*year,"_", climate_year, ".json"]))
-json_string = JSON.json(nodal_data)
-open(scenario_file_name,"w") do f
-  JSON.print(f, json_string)
-end
-
-
-# parameters data dictionary as .json file
-parameters_file_name = joinpath(_EUGO.BASE_DIR, "results", "TYNDP"*tyndp_version, join(["parameters_zonal_tyndp_", scenario*year,"_", climate_year, ".json"]))
-json_string = JSON.json(set_of_parameters)
-open(parameters_file_name,"w") do f
-  JSON.print(f, json_string)
-end
