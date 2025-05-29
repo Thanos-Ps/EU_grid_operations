@@ -142,7 +142,7 @@ if tyndp_version == "2020"
   climate_year = "2007"
 
 elseif tyndp_version == "2024"
-  scenario = "GA"
+  scenario = "DE"
   year = "2050"
   climate_year = "2009"
 end
@@ -308,3 +308,31 @@ end
 CSV.write("sensitivity_owf_results.csv", results_df)
 
 
+p1 = plot(results_df.owf_capacity*100,results_df.economic_benefit_perc,
+lw = 3, c =:black, xlabel="OWF capacity [MW]", ylabel="Economic Benefits [%]",
+        grid = false, framestyle=:box, 
+        legend = false,
+        marker = (:square, 6),
+        tickfont=font(18, "Computer Modern"),
+        guidefont=font(20, "Computer Modern"), 
+        dpi=300, size=(800,600)
+        )
+
+savefig(p1,  "economic_benefits_vs_owf_capacity.png")
+
+p2 = plot(results_df.owf_capacity*100, results_df.curtailment_level,
+lw = 3, c =:black, xlabel="OWF capacity [MW]", ylabel="Curtailment Level [%]",
+        grid = false, framestyle=:box, 
+        label = "With DCR",
+        marker = (:square, 6),
+        tickfont=font(18, "Computer Modern"),
+        guidefont=font(20, "Computer Modern"), 
+        dpi=300, size=(800,600)
+)
+
+plot!(results_df.owf_capacity*100, results_df.curtailment_level_ref,
+lw = 3, c =:blue, label = "Without DCR",marker = (:square, 6), legend = :topright,
+legendfontsize = 16,
+)
+
+savefig(p2, "comparison_of_curtailment.png")

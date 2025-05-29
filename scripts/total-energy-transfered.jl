@@ -316,3 +316,44 @@ println("Average temperature of NL-UK cable with DCR: $average_temperature_nl_uk
 println("Average temperature of BE-NL cable without DCR: $average_temperature_be_nl_no_dcr °C")
 println("Average temperature of BE-NL cable with DCR: $average_temperature_be_nl_dcr °C")
 
+# Bar charts for the results
+using Plots
+# Your raw data
+interconnectors = ["BE-UK", "NL-UK", "BE-NL"]
+with_dcr      = [total_cable_utilization_be_uk_dcr, total_cable_utilization_nl_uk_dcr, total_cable_utilization_be_nl_dcr]/1e6
+without_dcr   = [total_cable_utilization_be_uk_no_dcr, total_cable_utilization_nl_uk_no_dcr, total_cable_utilization_be_nl_no_dcr]/1e6
+
+# Number of categories
+n = length(interconnectors)
+
+# Offsets for the two bars within each category
+bar_width = 0.3
+x_dcr  = (1:n) .+ bar_width/2     # positions for “With DCR” bars
+x_no   = (1:n) .- bar_width/2     # positions for “Without DCR” bars
+
+# First plot the DCR bars...
+b = bar(x_no, without_dcr;
+    bar_width = bar_width,
+    label      = "Without DCR",
+    color      = :black,
+)
+
+# …then overlay the no-DCR bars
+bar!(x_dcr, with_dcr;
+    bar_width = bar_width,
+    label      = "With DCR",
+    color      = :grey,
+    framestyle = :box,
+    alpha = 1,
+    tickfont=font(18, "Computer Modern"),
+    guidefont=font(20, "Computer Modern"), 
+    dpi=300, size=(800,600))
+
+# Tidy up the axes
+xticks!(1:n, interconnectors)
+xaxis!((0.5, n + 0.5))  # pad the left/right so bars don’t get clipped
+xlabel!("Interconnector")
+ylabel!("Total Energy Transferred [TWh]")
+
+
+savefig(b, "comparison_total_energy_transferred.png")
